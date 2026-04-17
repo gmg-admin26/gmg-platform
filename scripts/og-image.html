@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 1200px; height: 630px; overflow: hidden; }
+
+  body {
+    width: 1200px;
+    height: 630px;
+    background: #070809;
+    font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'SF Pro Display', sans-serif;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* Grid background */
+  .grid {
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
+    background-size: 40px 40px;
+  }
+
+  /* Ambient glows */
+  .glow-main {
+    position: absolute;
+    top: -100px; right: -60px;
+    width: 700px; height: 700px;
+    background: radial-gradient(circle, rgba(6,182,212,0.13) 0%, rgba(6,182,212,0.04) 45%, transparent 70%);
+    pointer-events: none;
+  }
+  .glow-left {
+    position: absolute;
+    bottom: -80px; left: -60px;
+    width: 420px; height: 420px;
+    background: radial-gradient(circle, rgba(99,102,241,0.12) 0%, transparent 65%);
+    pointer-events: none;
+  }
+  .glow-mid {
+    position: absolute;
+    top: 200px; left: 460px;
+    width: 300px; height: 300px;
+    background: radial-gradient(circle, rgba(6,182,212,0.06) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  /* Top edge line */
+  .edge-top {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent 0%, rgba(6,182,212,0.5) 35%, rgba(59,130,246,0.5) 65%, transparent 100%);
+  }
+  .edge-bottom {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent 0%, rgba(6,182,212,0.3) 35%, rgba(59,130,246,0.3) 65%, transparent 100%);
+  }
+
+  /* ---- LEFT COLUMN ---- */
+  .left {
+    position: absolute;
+    left: 64px;
+    top: 0;
+    width: 460px;
+    height: 630px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 0;
+  }
+
+  .logo-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 28px;
+  }
+
+  .logo-mark {
+    width: 46px; height: 46px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #06B6D4 0%, #3B82F6 100%);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px; font-weight: 800; color: #fff;
+    letter-spacing: -0.5px;
+    flex-shrink: 0;
+    box-shadow: 0 0 24px rgba(6,182,212,0.35), 0 0 60px rgba(6,182,212,0.12);
+  }
+
+  .logo-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .logo-name {
+    font-size: 15px;
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: -0.3px;
+  }
+  .logo-sub {
+    font-size: 11px;
+    font-weight: 500;
+    color: rgba(255,255,255,0.35);
+    letter-spacing: 0.02em;
+  }
+
+  .separator {
+    width: 160px;
+    height: 1px;
+    background: linear-gradient(90deg, rgba(6,182,212,0.5) 0%, transparent 100%);
+    margin-bottom: 28px;
+  }
+
+  .headline {
+    font-size: 48px;
+    font-weight: 800;
+    line-height: 1.08;
+    letter-spacing: -2px;
+    color: #fff;
+    margin-bottom: 6px;
+  }
+  .headline .accent {
+    background: linear-gradient(95deg, #06B6D4 0%, #3B82F6 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .subtext {
+    font-size: 13px;
+    font-weight: 400;
+    color: rgba(255,255,255,0.35);
+    line-height: 1.7;
+    margin-top: 18px;
+    margin-bottom: 32px;
+    letter-spacing: 0.01em;
+  }
+
+  .pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .pill {
+    padding: 5px 12px;
+    border-radius: 6px;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    border: 1px solid;
+  }
+  .pill-cyan   { color: #06B6D4; background: rgba(6,182,212,0.1);   border-color: rgba(6,182,212,0.25); }
+  .pill-green  { color: #10B981; background: rgba(16,185,129,0.1);  border-color: rgba(16,185,129,0.25); }
+  .pill-purple { color: #8B5CF6; background: rgba(139,92,246,0.1);  border-color: rgba(139,92,246,0.25); }
+  .pill-amber  { color: #F59E0B; background: rgba(245,158,11,0.1);  border-color: rgba(245,158,11,0.25); }
+  .pill-blue   { color: #60A5FA; background: rgba(96,165,250,0.1);  border-color: rgba(96,165,250,0.25); }
+
+  /* ---- DASHBOARD CARD ---- */
+  .dashboard {
+    position: absolute;
+    right: 40px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 554px;
+    height: 526px;
+    border-radius: 16px;
+    background: linear-gradient(160deg, #12141A 0%, #0B0D11 100%);
+    border: 1px solid rgba(6,182,212,0.2);
+    overflow: hidden;
+    box-shadow:
+      0 0 0 1px rgba(6,182,212,0.08),
+      0 24px 80px rgba(0,0,0,0.6),
+      0 0 60px rgba(6,182,212,0.06);
+  }
+
+  /* Titlebar */
+  .titlebar {
+    height: 40px;
+    background: rgba(255,255,255,0.025);
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    display: flex;
+    align-items: center;
+    padding: 0 14px;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+  .tb-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+  }
+  .tb-label {
+    font-size: 10px;
+    font-weight: 500;
+    color: rgba(255,255,255,0.22);
+    margin-left: 6px;
+    flex: 1;
+    letter-spacing: 0.02em;
+  }
+  .tb-live {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 9px;
+    font-weight: 600;
+    color: #10B981;
+    letter-spacing: 0.05em;
+  }
+  .tb-live-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: #10B981;
+    box-shadow: 0 0 6px rgba(16,185,129,0.6);
+  }
+
+  /* Card content */
+  .card-body {
+    padding: 16px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    height: calc(100% - 40px);
+    overflow: hidden;
+  }
+
+  /* Artist row */
+  .artist-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .avatar {
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #06B6D4 0%, #3B82F6 100%);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 800; color: #fff;
+    flex-shrink: 0;
+    box-shadow: 0 0 14px rgba(6,182,212,0.3);
+  }
+  .artist-info {
+    flex: 1;
+  }
+  .artist-name {
+    font-size: 14px;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 4px;
+  }
+  .artist-tags {
+    display: flex;
+    gap: 6px;
+  }
+  .a-tag {
+    font-size: 8px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 4px;
+    letter-spacing: 0.03em;
+  }
+  .momentum-score {
+    font-size: 11px;
+    font-weight: 800;
+    color: #06B6D4;
+    background: rgba(6,182,212,0.1);
+    border: 1px solid rgba(6,182,212,0.25);
+    border-radius: 8px;
+    padding: 6px 12px;
+    text-align: center;
+    line-height: 1.2;
+    flex-shrink: 0;
+  }
+  .momentum-score span {
+    display: block;
+    font-size: 22px;
+    font-weight: 800;
+    line-height: 1;
+  }
+
+  .divider {
+    height: 1px;
+    background: rgba(255,255,255,0.05);
+    flex-shrink: 0;
+  }
+
+  /* Metrics */
+  .metrics {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+  .metric-card {
+    background: rgba(255,255,255,0.025);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 10px;
+    padding: 10px 12px;
+  }
+  .metric-label {
+    font-size: 8px;
+    font-weight: 500;
+    color: rgba(255,255,255,0.3);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 5px;
+  }
+  .metric-value {
+    font-size: 20px;
+    font-weight: 800;
+    color: #fff;
+    letter-spacing: -0.5px;
+    line-height: 1;
+    margin-bottom: 5px;
+  }
+  .metric-delta {
+    font-size: 8px;
+    font-weight: 600;
+    padding: 2px 6px;
+    border-radius: 4px;
+    display: inline-block;
+    letter-spacing: 0.02em;
+  }
+
+  /* Section label */
+  .section-label {
+    font-size: 8px;
+    font-weight: 600;
+    color: rgba(255,255,255,0.2);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 6px;
+  }
+
+  /* Releases */
+  .release-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 12px;
+    background: rgba(255,255,255,0.018);
+    border: 1px solid rgba(255,255,255,0.055);
+    border-radius: 8px;
+    margin-bottom: 6px;
+  }
+  .release-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .release-info { flex: 1; }
+  .release-title {
+    font-size: 11px;
+    font-weight: 600;
+    color: #fff;
+    margin-bottom: 2px;
+  }
+  .release-date {
+    font-size: 9px;
+    color: rgba(255,255,255,0.3);
+  }
+  .release-badge {
+    font-size: 8px;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 4px;
+    flex-shrink: 0;
+    letter-spacing: 0.02em;
+  }
+
+  /* Actions */
+  .action-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 7px 10px;
+    background: rgba(255,255,255,0.014);
+    border: 1px solid rgba(255,255,255,0.05);
+    border-radius: 6px;
+    margin-bottom: 5px;
+  }
+  .action-bar {
+    width: 4px; height: 14px;
+    border-radius: 2px;
+    flex-shrink: 0;
+  }
+  .action-label {
+    font-size: 10px;
+    font-weight: 500;
+    color: rgba(255,255,255,0.7);
+    flex: 1;
+  }
+  .action-agent {
+    font-size: 8px;
+    font-weight: 600;
+    padding: 2px 7px;
+    border-radius: 4px;
+    flex-shrink: 0;
+    letter-spacing: 0.02em;
+  }
+
+  /* Card fade */
+  .card-fade {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 56px;
+    background: linear-gradient(transparent, rgba(10,12,16,0.96));
+    pointer-events: none;
+  }
+
+  /* Signal decoration lines */
+  .signal-lines {
+    position: absolute;
+    left: 420px;
+    top: 0;
+    width: 120px;
+    height: 630px;
+    overflow: hidden;
+    opacity: 0.1;
+    pointer-events: none;
+  }
+</style>
+</head>
+<body>
+  <div class="grid"></div>
+  <div class="glow-main"></div>
+  <div class="glow-left"></div>
+  <div class="glow-mid"></div>
+  <div class="edge-top"></div>
+  <div class="edge-bottom"></div>
+
+  <!-- Left branding + copy -->
+  <div class="left">
+    <div class="logo-row">
+      <div class="logo-mark">G</div>
+      <div class="logo-text">
+        <div class="logo-name">Greater Music Group</div>
+        <div class="logo-sub">Artist OS &nbsp;·&nbsp; Powered by AI</div>
+      </div>
+    </div>
+
+    <div class="separator"></div>
+
+    <div class="headline">
+      AI Operating<br>
+      System<br>
+      <span class="accent">for Artists</span>
+    </div>
+
+    <div class="subtext">
+      Campaigns &nbsp;·&nbsp; Releases &nbsp;·&nbsp; Fan Intelligence<br>
+      Revenue &nbsp;·&nbsp; Growth Automation
+    </div>
+
+    <div class="pills">
+      <div class="pill pill-cyan">Rocksteady A&R</div>
+      <div class="pill pill-green">Release OS</div>
+      <div class="pill pill-purple">Campaign Engine</div>
+      <div class="pill pill-amber">Fan Intel</div>
+      <div class="pill pill-blue">Artist Banking</div>
+    </div>
+  </div>
+
+  <!-- Dashboard card -->
+  <div class="dashboard">
+    <div class="titlebar">
+      <div class="tb-dot" style="background:#EF444460"></div>
+      <div class="tb-dot" style="background:#F59E0B60"></div>
+      <div class="tb-dot" style="background:#10B98160"></div>
+      <div class="tb-label">Artist OS &nbsp;—&nbsp; All American Rejects</div>
+      <div class="tb-live">
+        <div class="tb-live-dot"></div>
+        LIVE
+      </div>
+    </div>
+
+    <div class="card-body">
+
+      <!-- Artist row -->
+      <div class="artist-row">
+        <div class="avatar">AAR</div>
+        <div class="artist-info">
+          <div class="artist-name">All American Rejects</div>
+          <div class="artist-tags">
+            <span class="a-tag" style="color:#06B6D4;background:rgba(6,182,212,0.12);border:1px solid rgba(6,182,212,0.3)">SPIN Records</span>
+            <span class="a-tag" style="color:#10B981;background:rgba(16,185,129,0.12);border:1px solid rgba(16,185,129,0.3)">Active Roster</span>
+          </div>
+        </div>
+        <div class="momentum-score">
+          <div style="font-size:8px;font-weight:600;color:rgba(6,182,212,0.6);margin-bottom:2px;letter-spacing:0.08em">MOMENTUM</div>
+          <span>94</span>
+          <div style="font-size:8px;color:rgba(6,182,212,0.5);margin-top:1px">▲ +6</div>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- Metrics -->
+      <div class="metrics">
+        <div class="metric-card">
+          <div class="metric-label">Monthly Listeners</div>
+          <div class="metric-value">4.2M</div>
+          <span class="metric-delta" style="color:#10B981;background:rgba(16,185,129,0.12);border:1px solid rgba(16,185,129,0.25)">+12% YTD</span>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Total Streams</div>
+          <div class="metric-value">182M</div>
+          <span class="metric-delta" style="color:#06B6D4;background:rgba(6,182,212,0.12);border:1px solid rgba(6,182,212,0.25)">+8% YTD</span>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Revenue (LTM)</div>
+          <div class="metric-value" style="font-size:17px">$218K</div>
+          <span class="metric-delta" style="color:#F59E0B;background:rgba(245,158,11,0.12);border:1px solid rgba(245,158,11,0.25)">+24% YTD</span>
+        </div>
+      </div>
+
+      <!-- Releases -->
+      <div>
+        <div class="section-label">Active Releases</div>
+        <div class="release-item">
+          <div class="release-dot" style="background:#06B6D4;box-shadow:0 0 8px rgba(6,182,212,0.5)"></div>
+          <div class="release-info">
+            <div class="release-title">Move Along (Deluxe Edition)</div>
+            <div class="release-date">Jun 2026 &nbsp;·&nbsp; Pre-save campaign live</div>
+          </div>
+          <div class="release-badge" style="color:#06B6D4;background:rgba(6,182,212,0.12);border:1px solid rgba(6,182,212,0.3)">Pre-Save Live</div>
+        </div>
+        <div class="release-item">
+          <div class="release-dot" style="background:#F59E0B;box-shadow:0 0 8px rgba(245,158,11,0.4)"></div>
+          <div class="release-info">
+            <div class="release-title">Untitled Summer Single</div>
+            <div class="release-date">Aug 2026 &nbsp;·&nbsp; Content strategy in progress</div>
+          </div>
+          <div class="release-badge" style="color:#F59E0B;background:rgba(245,158,11,0.12);border:1px solid rgba(245,158,11,0.3)">In Production</div>
+        </div>
+      </div>
+
+      <!-- Campaign actions -->
+      <div>
+        <div class="section-label">AI Campaign Actions</div>
+        <div class="action-item">
+          <div class="action-bar" style="background:#06B6D4"></div>
+          <div class="action-label">Launch Pre-Save Campaign</div>
+          <div class="action-agent" style="color:#06B6D4;background:rgba(6,182,212,0.12);border:1px solid rgba(6,182,212,0.25)">Campaign AI</div>
+        </div>
+        <div class="action-item">
+          <div class="action-bar" style="background:#8B5CF6"></div>
+          <div class="action-label">Pitch Spotify Editorial</div>
+          <div class="action-agent" style="color:#8B5CF6;background:rgba(139,92,246,0.12);border:1px solid rgba(139,92,246,0.25)">Release AI</div>
+        </div>
+        <div class="action-item">
+          <div class="action-bar" style="background:#10B981"></div>
+          <div class="action-label">Activate Fan Cluster Push</div>
+          <div class="action-agent" style="color:#10B981;background:rgba(16,185,129,0.12);border:1px solid rgba(16,185,129,0.25)">Growth AI</div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="card-fade"></div>
+  </div>
+
+</body>
+</html>
