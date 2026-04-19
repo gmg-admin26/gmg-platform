@@ -128,6 +128,7 @@ import DroppedQueue from './dashboard/pages/DroppedQueue';
 import LabelsPage from './dashboard/pages/LabelsPage';
 import LabelDetailPage from './dashboard/pages/LabelDetailPage';
 import FanOS from './dashboard/pages/FanOS';
+import SystemHub from './pages/SystemHub';
 
 function PublicLayout() {
   return (
@@ -196,6 +197,7 @@ function App() {
             <Route path="profile" element={<IndustryOSProfile />} />
           </Route>
           <Route path="/project-os" element={<ProjectOS />} />
+          <Route path="/system-hub" element={<InternalProtectedRoute><SystemHub /></InternalProtectedRoute>} />
           <Route path="/login/catalog-os" element={<CatalogOSLogin />} />
           <Route path="/catalog/login" element={<CatalogOSLogin />} />
           <Route path="/catalog-os/login" element={<CatalogOSLogin />} />
