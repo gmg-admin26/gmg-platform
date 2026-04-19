@@ -12,7 +12,7 @@ import {
 import { useAuth, useSystemRole } from '../auth/AuthContext';
 import { useRole } from '../auth/RoleContext';
 import { ARTIST_OS_NAV, ROLE_META } from '../auth/roles';
-import DemoRoleSwitcher from './components/DemoRoleSwitcher';
+import DemoRoleSwitcher from './components/catalog/DemoRoleSwitcher';
 import { ADMIN_NAV } from './admin/adminNav';
 import { getUpdatesForRole, getUnreadCount, PRIORITY_META } from './data/updatesData';
 import { initDropState } from './data/dropArtistService';
