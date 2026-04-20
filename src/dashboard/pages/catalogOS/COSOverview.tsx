@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Library, TrendingUp, TrendingDown, AlertCircle, Clock, ChevronRight, Zap, DollarSign, FileText, CheckSquare, Building2, Users, Mic2, MapPin, Mail, Send, MessageSquare, Bot, User, Flag, ArrowUpRight, Calendar, Megaphone, ShoppingBag, Music, Scale, Star, Target, Activity, RefreshCw, ExternalLink, Video, Globe, BarChart2, Heart, Shield, Rocket, Database, Search, BarChart, PieChart, Headphones, Settings } from 'lucide-react';
+import { Library, TrendingUp, TrendingDown, AlertCircle, Clock, ChevronRight, Zap, DollarSign, FileText, CheckSquare, Building2, Users, Mic2, MapPin, Mail, Send, MessageSquare, Bot, User, Flag, ArrowUpRight, Calendar, Megaphone, ShoppingBag, Music, Scale, Star, Target, Activity, RefreshCw, ExternalLink, Video, Globe, BarChart2, Heart, Shield, Rocket, Database, Search, BarChart, PieChart, Headphones, Settings, Lock, UserMinus } from 'lucide-react';
+import { isClientDropped, getDropRecord } from '../../data/catalogDropService';
 import OperatorTeamGrid from '../../components/artistOS/OperatorTeamGrid';
 import {
   BN_META, BN_METRICS, BN_METRICS_LIST, BN_CURRENT_STATUS,
@@ -172,6 +173,7 @@ export default function COSOverview() {
   const [now, setNow] = useState(new Date());
   const { openSubmit } = useTasks();
   const navigate = useNavigate();
+  const { activeClient } = useCatalogClient();
   useEffect(() => {
     const t = setInterval(() => setNow(new Date()), 1000);
     return () => clearInterval(t);
@@ -179,6 +181,110 @@ export default function COSOverview() {
 
   const openTasks = BN_TASKS.filter(t => t.status !== 'completed');
   const flaggedTasks = BN_TASKS.filter(t => t.flagged);
+
+  // Dropped client — show locked overlay instead of full profile
+  const clientDropped = activeClient ? isClientDropped(activeClient.id) : false;
+  const dropRecord = activeClient ? getDropRecord(activeClient.id) : null;
+
+  if (clientDropped && activeClient) {
+    return (
+      <div className="min-h-full bg-[#07080A]">
+        {/* Lock banner */}
+        <div style={{
+          background: 'rgba(239,68,68,0.06)',
+          borderBottom: '2px solid rgba(239,68,68,0.25)',
+          padding: '0',
+        }}>
+          <div style={{ height: 2, background: 'linear-gradient(90deg,transparent,rgba(239,68,68,0.5),transparent)' }} />
+        </div>
+
+        <div style={{ padding: '48px 32px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '80vh', textAlign: 'center' }}>
+          {/* Lock icon */}
+          <div style={{
+            width: 64, height: 64, borderRadius: 18,
+            background: 'rgba(239,68,68,0.08)', border: '2px solid rgba(239,68,68,0.25)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            marginBottom: 20,
+          }}>
+            <Lock size={26} color="#EF4444" />
+          </div>
+
+          {/* Status badge */}
+          <div style={{ marginBottom: 14, display: 'flex', alignItems: 'center', gap: 8 }}>
+            <UserMinus size={13} color="#EF4444" />
+            <span style={{ fontFamily: 'monospace', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.12em', color: '#EF4444' }}>
+              Client Dropped · Read-Only
+            </span>
+          </div>
+
+          <h2 style={{ fontSize: 22, fontWeight: 800, color: 'rgba(255,255,255,0.7)', marginBottom: 6 }}>
+            {activeClient.name}
+          </h2>
+
+          <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.35)', lineHeight: 1.7, maxWidth: 420, marginBottom: 20 }}>
+            This client has been moved to the Dropped Queue. Their profile is locked for active management
+            but remains viewable by admin for historical reference and investor review.
+          </p>
+
+          {dropRecord?.reason && (
+            <div style={{
+              marginBottom: 20, padding: '10px 16px', borderRadius: 10,
+              background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)',
+              maxWidth: 400,
+            }}>
+              <span style={{ fontSize: 9.5, fontFamily: 'monospace', color: 'rgba(255,255,255,0.25)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Exit Reason: </span>
+              <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.45)' }}>{dropRecord.reason}</span>
+            </div>
+          )}
+
+          {/* Locked snapshot */}
+          <div style={{
+            display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10, maxWidth: 480, marginBottom: 28,
+          }}>
+            {[
+              { label: 'Catalog Value', value: '$—', sub: 'Locked' },
+              { label: 'Monthly Rev',   value: '$—', sub: 'Locked' },
+              { label: 'Client Since',  value: activeClient.client_since ?? '—', sub: 'Historical' },
+            ].map(m => (
+              <div key={m.label} style={{
+                padding: '10px 14px', borderRadius: 10,
+                background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)',
+              }}>
+                <div style={{ fontSize: 15, fontWeight: 800, color: 'rgba(255,255,255,0.3)', fontFamily: 'monospace' }}>{m.value}</div>
+                <div style={{ fontSize: 8.5, color: 'rgba(255,255,255,0.2)', textTransform: 'uppercase', letterSpacing: '0.06em', marginTop: 3 }}>{m.label}</div>
+                <div style={{ fontSize: 8, color: 'rgba(239,68,68,0.5)', fontFamily: 'monospace', marginTop: 1 }}>{m.sub}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Actions */}
+          <div style={{ display: 'flex', gap: 10 }}>
+            <button
+              onClick={() => navigate('/catalog/app/dropped-queue')}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 6,
+                padding: '9px 16px', borderRadius: 10, cursor: 'pointer',
+                background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.25)',
+                color: '#10B981', fontSize: 12, fontWeight: 700,
+              }}
+            >
+              <RefreshCw size={12} /> Reinstate from Dropped Queue
+            </button>
+            <button
+              onClick={() => navigate('/catalog/app/roster')}
+              style={{
+                padding: '9px 14px', borderRadius: 10, cursor: 'pointer',
+                background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.09)',
+                color: 'rgba(255,255,255,0.4)', fontSize: 12, fontWeight: 600,
+              }}
+            >
+              Back to Roster
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-full bg-[#07080A]">

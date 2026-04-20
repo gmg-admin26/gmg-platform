@@ -4,7 +4,7 @@ import {
   Library, BarChart2, DollarSign, CheckSquare, Calendar, Megaphone,
   Users, Heart, Mic2, TrendingUp, ShoppingBag, FileText, Video, Globe,
   ChevronRight, BookOpen, Bug, Activity, Layers, Wallet, LogOut,
-  HelpCircle, X, Rocket,
+  HelpCircle, X, Rocket, UserMinus,
 } from 'lucide-react';
 import { useHelp } from '../../context/HelpContext';
 import { CatalogClientProvider, useCatalogClient } from '../../context/CatalogClientContext';
@@ -12,7 +12,7 @@ import CatalogClientSwitcher from '../../components/catalog/CatalogClientSwitche
 import { useAuth } from '../../../auth/AuthContext';
 
 const GROUP_A = [
-  { icon: Library,     label: 'Overview',          slug: '',            end: true  },
+  { icon: Library,     label: 'Overview',          slug: 'overview',    end: false },
   { icon: TrendingUp,  label: 'Catalog Value',      slug: 'value',       end: false },
   { icon: Layers,      label: 'Asset Library',      slug: 'assets',      end: false },
   { icon: DollarSign,  label: 'Revenue',            slug: 'revenue',     end: false },
@@ -28,12 +28,13 @@ const GROUP_A = [
 ];
 
 const GROUP_B = [
-  { icon: CheckSquare, label: 'Tasks',              slug: 'tasks',       end: false },
-  { icon: Activity,    label: 'Team Progress',      slug: 'progress',    end: false },
-  { icon: Users,       label: 'Roster',             slug: 'roster',      end: false },
-  { icon: Mic2,        label: 'Touring',            slug: 'touring',     end: false },
-  { icon: ShoppingBag, label: 'Inventory + Merch',  slug: 'inventory',   end: false },
-  { icon: Wallet,      label: 'Project OS',          slug: 'workers',     end: false },
+  { icon: CheckSquare, label: 'Tasks',              slug: 'tasks',         end: false },
+  { icon: Activity,    label: 'Team Progress',      slug: 'progress',      end: false },
+  { icon: Users,       label: 'Catalog Clients',    slug: 'roster',        end: false },
+  { icon: UserMinus,   label: 'Dropped Queue',      slug: 'dropped-queue', end: false },
+  { icon: Mic2,        label: 'Touring',            slug: 'touring',       end: false },
+  { icon: ShoppingBag, label: 'Inventory + Merch',  slug: 'inventory',     end: false },
+  { icon: Wallet,      label: 'Project OS',          slug: 'workers',       end: false },
 ];
 
 function FloatingSupportButton() {
@@ -55,11 +56,12 @@ function FloatingSupportButton() {
   const parts = location.pathname.split('/').filter(Boolean);
   const last = parts[parts.length - 1];
   const labelMap: Record<string, string> = {
-    'app': 'Overview', 'value': 'Catalog Value', 'assets': 'Asset Library',
+    'app': 'Overview', 'overview': 'Overview', 'value': 'Catalog Value', 'assets': 'Asset Library',
     'revenue': 'Revenue', 'campaigns': 'Campaigns', 'fans': 'Fan Intelligence', 'fan-os': 'Fan OS',
     'futures': 'Futures', 'timeline': '12-Month Plan', 'meetings': 'Reports', 'brand': 'Brand Health',
     'rights': 'Rights + Contracts', 'entities': 'Business Entities',
-    'tasks': 'Tasks', 'progress': 'Team Progress', 'roster': 'Roster',
+    'tasks': 'Tasks', 'progress': 'Team Progress', 'roster': 'Catalog Clients',
+    'dropped-queue': 'Dropped Queue',
     'touring': 'Touring', 'inventory': 'Inventory + Merch', 'workers': 'Project OS',
   };
   const pageLabel = labelMap[last] ?? 'Catalog OS';

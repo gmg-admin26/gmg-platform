@@ -120,6 +120,7 @@ import COSWorkers from './dashboard/pages/catalogOS/COSWorkers';
 import COSMeetings from './dashboard/pages/catalogOS/COSMeetings';
 import COSEntities from './dashboard/pages/catalogOS/COSEntities';
 import COSFutures from './dashboard/pages/catalogOS/COSFutures';
+import COSDroppedQueue from './dashboard/pages/catalogOS/COSDroppedQueue';
 import DealPipeline from './dashboard/pages/DealPipeline';
 import WeeklySignings from './dashboard/pages/WeeklySignings';
 import ArtistOSCampaignCenter from './dashboard/pages/ArtistOSCampaignCenter';
@@ -203,7 +204,10 @@ function App() {
           <Route path="/catalog/login" element={<CatalogOSLogin />} />
           <Route path="/catalog-os/login" element={<CatalogOSLogin />} />
           <Route path="/catalog/app" element={<CatalogOSProtectedRoute><CatalogOSLayout /></CatalogOSProtectedRoute>}>
-            <Route index element={<COSOverview />} />
+            <Route index element={<COSRoster />} />
+            <Route path="roster"        element={<COSRoster />} />
+            <Route path="overview"      element={<COSOverview />} />
+            <Route path="dropped-queue" element={<COSDroppedQueue />} />
             <Route path="value"     element={<COSValue />} />
             <Route path="assets"    element={<COSAssets />} />
             <Route path="revenue"   element={<COSRevenue />} />
@@ -211,7 +215,6 @@ function App() {
             <Route path="progress"  element={<COSTeamProgress />} />
             <Route path="timeline"  element={<COSTimeline />} />
             <Route path="campaigns" element={<COSCampaigns />} />
-            <Route path="roster"    element={<COSRoster />} />
             <Route path="fans"      element={<COSFans />} />
             <Route path="fan-os"    element={<FanOS />} />
             <Route path="touring"   element={<COSTouring />} />
