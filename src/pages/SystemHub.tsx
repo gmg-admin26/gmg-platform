@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { useSystemRole } from '../auth/AuthContext';
+import { ROUTES } from '../lib/routes';
 import {
   Radio,
   User,
@@ -29,7 +30,7 @@ const SYSTEMS: SystemCard[] = [
     key: 'rocksteady',
     label: 'Rocksteady',
     sub: 'A&R Intelligence',
-    path: '/dashboard/rocksteady',
+    path: ROUTES.ROCKSTEADY_DASH,
     icon: Radio,
     color: '#06B6D4',
     border: 'border-[#06B6D4]/30',
@@ -39,7 +40,7 @@ const SYSTEMS: SystemCard[] = [
     key: 'artist-os',
     label: 'Artist OS',
     sub: 'Artist Operations Platform',
-    path: '/dashboard/artist-os',
+    path: ROUTES.ARTIST_OS,
     icon: User,
     color: '#10B981',
     border: 'border-[#10B981]/30',
@@ -48,7 +49,7 @@ const SYSTEMS: SystemCard[] = [
     key: 'catalog-os',
     label: 'Catalog OS',
     sub: 'Catalog Management',
-    path: '/catalog/app',
+    path: ROUTES.CATALOG_APP,
     icon: Archive,
     color: '#F59E0B',
     border: 'border-[#F59E0B]/30',
@@ -57,7 +58,7 @@ const SYSTEMS: SystemCard[] = [
     key: 'industry-os',
     label: 'Industry OS',
     sub: 'Industry Partner Hub',
-    path: '/industry-os/app',
+    path: ROUTES.INDUSTRY_OS_APP,
     icon: Globe,
     color: '#3B82F6',
     border: 'border-[#3B82F6]/30',
@@ -66,7 +67,7 @@ const SYSTEMS: SystemCard[] = [
     key: 'project-os',
     label: 'Project OS',
     sub: 'Worker & Project Hub',
-    path: '/industry-os/app/project',
+    path: ROUTES.INDUSTRY_OS_PROJECT,
     icon: Briefcase,
     color: '#8B5CF6',
     border: 'border-[#8B5CF6]/30',
@@ -76,7 +77,7 @@ const SYSTEMS: SystemCard[] = [
     key: 'admin-os',
     label: 'Admin OS',
     sub: 'Command Center',
-    path: '/dashboard/admin-os',
+    path: ROUTES.ADMIN_OS,
     icon: Shield,
     color: '#EF4444',
     border: 'border-[#EF4444]/30',
@@ -85,13 +86,24 @@ const SYSTEMS: SystemCard[] = [
 ];
 
 const NAV_ITEMS = [
-  { icon: Activity, label: 'Overview', path: '/system-hub' },
-  { icon: Radio, label: 'Rocksteady', path: '/dashboard/rocksteady' },
-  { icon: User, label: 'Artist OS', path: '/dashboard/artist-os' },
-  { icon: Archive, label: 'Catalog OS', path: '/catalog/app' },
-  { icon: Globe, label: 'Industry OS', path: '/industry-os/app' },
-  { icon: Layers, label: 'Admin OS', path: '/dashboard/admin-os' },
+  { icon: Activity, label: 'Overview', path: ROUTES.SYSTEM_HUB },
+  { icon: Radio, label: 'Rocksteady', path: ROUTES.ROCKSTEADY_DASH },
+  { icon: User, label: 'Artist OS', path: ROUTES.ARTIST_OS },
+  { icon: Archive, label: 'Catalog OS', path: ROUTES.CATALOG_APP },
+  { icon: Globe, label: 'Industry OS', path: ROUTES.INDUSTRY_OS_APP },
+  { icon: Layers, label: 'Admin OS', path: ROUTES.ADMIN_OS },
   { icon: Settings, label: 'Settings', path: '/dashboard/settings' },
+];
+
+const QUICK_LINKS = [
+  { label: 'Command Center',  path: ROUTES.ADMIN_OS },
+  { label: 'Scout Network',   path: ROUTES.ROCKSTEADY_SCOUTS },
+  { label: 'Deal Pipeline',   path: ROUTES.ROCKSTEADY_PIPELINE },
+  { label: 'Artist Roster',   path: ROUTES.ARTIST_OS_ROSTER },
+  { label: 'Project Safes',   path: ROUTES.ADMIN_OS_SAFES },
+  { label: 'Agent Workspace', path: ROUTES.ADMIN_OS_AGENTS },
+  { label: 'Finance',         path: ROUTES.ADMIN_OS_FINANCE },
+  { label: 'Legal',           path: ROUTES.ADMIN_OS_LEGAL },
 ];
 
 export default function SystemHub() {
@@ -102,7 +114,7 @@ export default function SystemHub() {
     <div className="min-h-screen bg-[#080A0F] flex">
       <div className="w-14 flex-shrink-0 flex flex-col items-center py-4 bg-[#0D1117] border-r border-white/[0.06]">
         <button
-          onClick={() => navigate('/system-hub')}
+          onClick={() => navigate(ROUTES.SYSTEM_HUB)}
           className="w-9 h-9 rounded-lg bg-white/10 hover:bg-white/15 flex items-center justify-center mb-5 transition-colors"
           title="System Hub"
         >
@@ -116,7 +128,7 @@ export default function SystemHub() {
             const Icon = item.icon;
             return (
               <button
-                key={item.key || item.label}
+                key={item.label}
                 onClick={() => navigate(item.path)}
                 title={item.label}
                 className="w-9 h-9 rounded-lg hover:bg-white/8 flex items-center justify-center transition-colors group relative"
@@ -137,9 +149,7 @@ export default function SystemHub() {
             <span className="text-white/30 text-xs">System Hub</span>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-white/20 text-xs">
-              Role:
-            </span>
+            <span className="text-white/20 text-xs">Role:</span>
             <span className="text-white/50 text-xs font-mono">{systemRole ?? '—'}</span>
           </div>
         </div>
@@ -196,16 +206,7 @@ export default function SystemHub() {
           <div className="border-t border-white/[0.06] pt-8">
             <div className="text-white/20 text-xs mb-4 tracking-widest uppercase">Quick Access</div>
             <div className="flex flex-wrap gap-2">
-              {[
-                { label: 'Command Center', path: '/dashboard/admin-os' },
-                { label: 'Scout Network', path: '/dashboard/rocksteady/scouts' },
-                { label: 'Deal Pipeline', path: '/dashboard/rocksteady/pipeline' },
-                { label: 'Artist Roster', path: '/dashboard/artist-os/roster' },
-                { label: 'Project Safes', path: '/dashboard/admin-os/projects/safes' },
-                { label: 'Agent Workspace', path: '/dashboard/admin-os/agents' },
-                { label: 'Finance', path: '/dashboard/admin-os/finance' },
-                { label: 'Legal', path: '/dashboard/admin-os/legal' },
-              ].map((link) => (
+              {QUICK_LINKS.map((link) => (
                 <button
                   key={link.path}
                   onClick={() => navigate(link.path)}

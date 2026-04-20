@@ -1,5 +1,6 @@
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth, useSystemRole } from './AuthContext';
+import { ROUTES } from '../lib/routes';
 import type { ReactNode } from 'react';
 import { Lock, ArrowRight } from 'lucide-react';
 
@@ -60,15 +61,15 @@ export default function CatalogOSProtectedRoute({ children, requiredRole }: Prop
     catalogOSAuth.authenticated || auth.authenticated || rocksteadyAuth.authenticated;
 
   if (!isAnythingAuthenticated || !systemRole) {
-    return <Navigate to="/catalog/login" state={{ from: location }} replace />;
+    return <Navigate to={ROUTES.LOGIN_CATALOG_ALT} state={{ from: location }} replace />;
   }
 
   if (systemRole === 'ARTIST') {
-    return <Navigate to="/dashboard/artist-os" replace />;
+    return <Navigate to={ROUTES.ARTIST_OS} replace />;
   }
 
   if (!access.canAccessCatalogOS) {
-    return <Navigate to="/catalog/login" state={{ from: location }} replace />;
+    return <Navigate to={ROUTES.LOGIN_CATALOG_ALT} state={{ from: location }} replace />;
   }
 
   if (systemRole === 'CATALOG_CLIENT') {

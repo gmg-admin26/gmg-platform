@@ -12,6 +12,7 @@ import {
 import { useAuth, useSystemRole } from '../auth/AuthContext';
 import { useRole } from '../auth/RoleContext';
 import { ARTIST_OS_NAV, ROLE_META } from '../auth/roles';
+import { ROUTES } from '../lib/routes';
 import DemoRoleSwitcher from './components/catalog/DemoRoleSwitcher';
 import { ADMIN_NAV } from './admin/adminNav';
 import { getUpdatesForRole, getUnreadCount, PRIORITY_META } from './data/updatesData';
@@ -240,7 +241,7 @@ export default function DashboardLayout() {
 
       <aside className="w-[224px] shrink-0 flex flex-col border-r border-white/[0.06] bg-[#0A0B0E] overflow-y-auto">
         <div className="px-5 py-4 border-b border-white/[0.06] shrink-0">
-          <button onClick={() => navigate('/system-hub')} className="flex items-center gap-2 w-full text-left hover:opacity-80 transition-opacity">
+          <button onClick={() => navigate(ROUTES.SYSTEM_HUB)} className="flex items-center gap-2 w-full text-left hover:opacity-80 transition-opacity">
             <Zap className="w-4.5 h-4.5 text-[#06B6D4]" />
             <span className="text-[13px] font-semibold tracking-[0.12em] uppercase text-white/80">GMG</span>
             <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-[#06B6D4]/10 text-[#06B6D4] border border-[#06B6D4]/20 ml-auto">LIVE</span>

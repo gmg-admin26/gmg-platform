@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Lock, ChevronRight, Briefcase, ShieldCheck, Users as Users2 } from 'lucide-react';
 import { useIndustryOS } from '../auth/IndustryOSContext';
+import { ROUTES } from '../lib/routes';
 import IndustryProjectOS from './industryOS/IndustryProjectOS';
 import IndustryProjectOSAdmin from './industryOS/IndustryProjectOSAdmin';
 
@@ -73,7 +74,7 @@ function AdminProjectOS() {
     <div className="min-h-screen bg-[#07080A]">
       <header className="border-b border-white/[0.05] bg-[#07080A]/95 backdrop-blur-sm sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 flex items-center gap-4 h-14">
-          <Link to="/system-hub" className="flex items-center gap-2.5 hover:opacity-80 transition-opacity">
+          <Link to={ROUTES.SYSTEM_HUB} className="flex items-center gap-2.5 hover:opacity-80 transition-opacity">
             <div className="w-6 h-6 rounded-lg flex items-center justify-center bg-[#F59E0B]/15 border border-[#F59E0B]/25">
               <ShieldCheck className="w-3 h-3 text-[#F59E0B]" />
             </div>
@@ -126,7 +127,7 @@ function WorkerProjectOS() {
     <div className="min-h-screen bg-[#07080A]">
       <header className="border-b border-white/[0.05] bg-[#07080A]/95 backdrop-blur-sm sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 flex items-center gap-4 h-14">
-          <Link to="/system-hub" className="flex items-center gap-2.5 hover:opacity-80 transition-opacity">
+          <Link to={ROUTES.SYSTEM_HUB} className="flex items-center gap-2.5 hover:opacity-80 transition-opacity">
             <div className="w-6 h-6 rounded-lg flex items-center justify-center bg-[#10B981]/15 border border-[#10B981]/25">
               <Briefcase className="w-3 h-3 text-[#10B981]" />
             </div>

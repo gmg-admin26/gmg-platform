@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Outlet, NavLink, useNavigate, Link } from 'react-router-dom';
 import { LayoutGrid, Users, Bot, FolderKanban, User, LogOut, ChevronRight, Menu, X, BookOpen } from 'lucide-react';
 import { useIndustryOS } from '../../auth/IndustryOSContext';
+import { ROUTES } from '../../lib/routes';
 
 const ACCENT = '#10B981';
 
@@ -40,7 +41,7 @@ function SidebarNav({ onClose }: { onClose?: () => void }) {
     <div className="flex flex-col h-full bg-[#090A0D] border-r border-white/[0.05]" style={{ width: 220 }}>
       {/* Logo */}
       <div className="flex items-center gap-2.5 px-4 py-4 border-b border-white/[0.05]">
-        <Link to="/system-hub" className="flex items-center gap-2.5 flex-1 min-w-0" onClick={onClose}>
+        <Link to={ROUTES.SYSTEM_HUB} className="flex items-center gap-2.5 flex-1 min-w-0" onClick={onClose}>
           <div className="w-6 h-6 rounded-lg flex items-center justify-center shrink-0"
             style={{ background: `${ACCENT}18`, border: `1px solid ${ACCENT}28` }}>
             <div className="w-2.5 h-2.5 rounded-sm" style={{ background: ACCENT }} />
