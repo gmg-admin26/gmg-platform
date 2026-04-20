@@ -1,5 +1,4 @@
-import { BookOpen, Bug, type LucideIcon } from 'lucide-react';
-import { useHelp } from '../../context/HelpContext';
+import { type LucideIcon } from 'lucide-react';
 
 interface Props {
   icon: LucideIcon;
@@ -22,8 +21,6 @@ export default function CatalogPageHeader({
   logoUrl,
   logoAlt,
 }: Props) {
-  const { openFAQ, openBugReport } = useHelp();
-
   return (
     <div className="flex items-start justify-between px-6 pt-5 pb-4 border-b border-white/[0.05]">
       <div className="flex items-center gap-3">
@@ -57,24 +54,11 @@ export default function CatalogPageHeader({
         </div>
       </div>
 
-      <div className="flex items-center gap-2 shrink-0">
-        {actions}
-        <div className="w-px h-5 bg-white/[0.07] mx-1" />
-        <button
-          onClick={() => openFAQ(title)}
-          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded border border-white/[0.07] text-[10.5px] text-white/30 hover:text-white/70 hover:border-[#06B6D4]/30 hover:text-[#06B6D4] transition-all group"
-        >
-          <BookOpen className="w-3 h-3" />
-          <span className="hidden sm:inline">FAQ</span>
-        </button>
-        <button
-          onClick={() => openBugReport(title)}
-          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded border border-white/[0.07] text-[10.5px] text-white/30 hover:text-[#EF4444] hover:border-[#EF4444]/30 transition-all group"
-        >
-          <Bug className="w-3 h-3" />
-          <span className="hidden sm:inline">Bug</span>
-        </button>
-      </div>
+      {actions && (
+        <div className="flex items-center gap-2 shrink-0">
+          {actions}
+        </div>
+      )}
     </div>
   );
 }

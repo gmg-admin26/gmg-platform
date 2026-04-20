@@ -1,270 +1,501 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import {
-  Users, Music, DollarSign, TrendingUp, BarChart2, Star,
-  ArrowUpRight, Activity, Globe, Calendar, AlertCircle, CheckCircle,
+  Users, DollarSign, TrendingUp, Activity, MoreHorizontal,
+  Music, ArrowUpRight, AlertTriangle, CheckCircle, Globe,
+  ExternalLink, Loader, Search, Filter,
 } from 'lucide-react';
 import CatalogPageHeader from './CatalogPageHeader';
 import { useCatalogClient } from '../../context/CatalogClientContext';
-import {
-  CatalogClientArtist, ARTIST_ROLE_META, CLIENT_TYPE_META, ArtistStatus,
-} from '../../data/catalogClientService';
 
-const STATUS_META: Record<ArtistStatus, { label: string; color: string }> = {
-  active:   { label: 'Active',   color: '#10B981' },
-  inactive: { label: 'Inactive', color: '#6B7280' },
-  on_hold:  { label: 'On Hold',  color: '#F59E0B' },
-  exit:     { label: 'Exited',   color: '#EF4444' },
+// ── Static client data (mirrors seeded DB rows) ───────────────────────────────
+
+interface ClientRow {
+  id: string;
+  name: string;
+  status: 'active' | 'onboarding' | 'paused' | 'offboarded';
+  health: number;
+  priority: 'critical' | 'high' | 'medium' | 'low';
+  catalogValue: string;
+  monthlyRevenue: string;
+  activeTasks: number;
+  openIssues: number;
+  manager: string;
+  clientSince: string;
+  accent: string;
+  genre: string;
+  releases: number;
+  streams: string;
+  notes: string;
+}
+
+const CLIENTS: ClientRow[] = [
+  {
+    id: 'a1000000-0000-0000-0000-000000000001',
+    name: 'Bassnectar',
+    status: 'active',
+    health: 87,
+    priority: 'critical',
+    catalogValue: '$5.8M',
+    monthlyRevenue: '$284.6K',
+    activeTasks: 7,
+    openIssues: 1,
+    manager: 'Nick Terzo',
+    clientSince: 'Nov 2025',
+    accent: '#10B981',
+    genre: 'Electronic / Bass',
+    releases: 28,
+    streams: '2.4B',
+    notes: 'Brand rehab + catalog reactivation. ZFM active. Sync pipeline $200K–$600K target.',
+  },
+  {
+    id: 'a2000000-0000-0000-0000-000000000002',
+    name: 'Santigold',
+    status: 'active',
+    health: 74,
+    priority: 'high',
+    catalogValue: '$3.2M',
+    monthlyRevenue: '$148K',
+    activeTasks: 4,
+    openIssues: 0,
+    manager: 'GMG Catalog Team',
+    clientSince: 'Feb 2026',
+    accent: '#F59E0B',
+    genre: 'Indie Pop / Art Rock',
+    releases: 18,
+    streams: '820M',
+    notes: 'New LP in development for Q4 2026. Film + TV sync pipeline active.',
+  },
+  {
+    id: 'a3000000-0000-0000-0000-000000000003',
+    name: 'Placeholder Artist 03',
+    status: 'onboarding',
+    health: 42,
+    priority: 'medium',
+    catalogValue: '$420K',
+    monthlyRevenue: '$18.5K',
+    activeTasks: 2,
+    openIssues: 3,
+    manager: 'GMG Catalog Team',
+    clientSince: 'Apr 2026',
+    accent: '#3B82F6',
+    genre: 'TBD',
+    releases: 6,
+    streams: '42M',
+    notes: 'Onboarding in progress. Rights clearance review underway. Full assessment May 2026.',
+  },
+];
+
+// ── Shared primitives ─────────────────────────────────────────────────────────
+
+const STATUS_META = {
+  active:      { label: 'Active',      color: '#10B981' },
+  onboarding:  { label: 'Onboarding',  color: '#06B6D4' },
+  paused:      { label: 'Paused',      color: '#F59E0B' },
+  offboarded:  { label: 'Offboarded',  color: '#6B7280' },
 };
 
-function fmt(n?: number | null) {
-  if (!n) return '—';
-  if (n >= 1_000_000) return `$${(n / 1_000_000).toFixed(1)}M`;
-  if (n >= 1_000) return `$${(n / 1_000).toFixed(0)}K`;
-  return `$${n}`;
-}
+const PRIORITY_META = {
+  critical: { label: 'Critical', color: '#EF4444' },
+  high:     { label: 'High',     color: '#F59E0B' },
+  medium:   { label: 'Medium',   color: '#06B6D4' },
+  low:      { label: 'Low',      color: '#6B7280' },
+};
 
 function PillBadge({ label, color }: { label: string; color: string }) {
   return (
-    <span className="text-[8.5px] font-mono px-1.5 py-0.5 rounded uppercase"
-      style={{ color, background: `${color}14`, border: `1px solid ${color}22` }}>
+    <span style={{
+      fontFamily: 'monospace', fontSize: 8, fontWeight: 700,
+      textTransform: 'uppercase' as const, letterSpacing: '0.07em',
+      padding: '2px 6px', borderRadius: 4,
+      color, background: `${color}14`, border: `1px solid ${color}22`,
+      whiteSpace: 'nowrap' as const, flexShrink: 0,
+    }}>
       {label}
     </span>
   );
 }
 
-function ArtistCard({ artist, rank, accent }: { artist: CatalogClientArtist; rank: number; accent: string }) {
-  const sm = STATUS_META[artist.status];
-  const rm = ARTIST_ROLE_META[artist.artist_role];
-  const pct = artist.catalog_value_est && artist.monthly_revenue_est
-    ? ((artist.monthly_revenue_est * 12) / artist.catalog_value_est * 100).toFixed(1)
-    : null;
-
+function HealthBar({ score }: { score: number }) {
+  const color = score >= 75 ? '#10B981' : score >= 55 ? '#F59E0B' : '#EF4444';
   return (
-    <div className="bg-[#0B0D10] border border-white/[0.06] rounded-2xl p-4 hover:border-white/[0.10] hover:bg-[#0D0F14] transition-all group">
-      <div className="flex items-start gap-3 mb-3">
-        <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 font-bold text-[13px]"
-          style={{ background: `${accent}14`, border: `1px solid ${accent}22`, color: accent }}>
-          {rank}
-        </div>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-0.5">
-            <p className="text-[13px] font-bold text-white/80 truncate group-hover:text-white/95 transition-colors">
-              {artist.artist_name}
-            </p>
-            {artist.is_primary && <Star className="w-3 h-3 text-[#F59E0B] shrink-0 fill-current" />}
-          </div>
-          <div className="flex items-center gap-2 flex-wrap">
-            {artist.genre && (
-              <span className="text-[9.5px] text-white/25">{artist.genre}</span>
-            )}
-            <PillBadge label={rm.label} color={rm.color} />
-            <PillBadge label={sm.label} color={sm.color} />
-          </div>
-        </div>
-        <ArrowUpRight className="w-3.5 h-3.5 text-white/15 group-hover:text-white/40 shrink-0 transition-colors mt-0.5" />
-      </div>
-
-      <div className="grid grid-cols-3 gap-2 mt-3">
-        <div className="bg-white/[0.025] rounded-xl px-2.5 py-2">
-          <p className="text-[8px] font-mono text-white/20 uppercase mb-0.5">Catalog Value</p>
-          <p className="text-[13px] font-bold" style={{ color: accent }}>{fmt(artist.catalog_value_est)}</p>
-        </div>
-        <div className="bg-white/[0.025] rounded-xl px-2.5 py-2">
-          <p className="text-[8px] font-mono text-white/20 uppercase mb-0.5">Monthly Rev</p>
-          <p className="text-[13px] font-bold text-white/65">{fmt(artist.monthly_revenue_est)}</p>
-        </div>
-        <div className="bg-white/[0.025] rounded-xl px-2.5 py-2">
-          <p className="text-[8px] font-mono text-white/20 uppercase mb-0.5">Annual Yield</p>
-          <p className="text-[13px] font-bold text-[#A3E635]">{pct ? `${pct}%` : '—'}</p>
-        </div>
-      </div>
-
-      <div className="flex items-center gap-3 mt-3 pt-2.5 border-t border-white/[0.04]">
-        {artist.total_releases !== undefined && artist.total_releases > 0 && (
-          <span className="flex items-center gap-1 text-[9.5px] font-mono text-white/20">
-            <Music className="w-3 h-3" /> {artist.total_releases} releases
-          </span>
-        )}
-        {artist.total_streams_alltime && (
-          <span className="flex items-center gap-1 text-[9.5px] font-mono text-white/20">
-            <Activity className="w-3 h-3" /> {artist.total_streams_alltime} streams
-          </span>
-        )}
-        {artist.signed_date && (
-          <span className="flex items-center gap-1 text-[9.5px] font-mono text-white/20">
-            <Calendar className="w-3 h-3" /> Since {artist.signed_date}
-          </span>
-        )}
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+      <div style={{ fontFamily: 'monospace', fontSize: 14, fontWeight: 900, color, lineHeight: 1 }}>{score}</div>
+      <div style={{ width: 38, height: 3, background: 'rgba(255,255,255,0.08)', borderRadius: 99, overflow: 'hidden' }}>
+        <div style={{ width: `${score}%`, height: '100%', background: color, borderRadius: 99 }} />
       </div>
     </div>
   );
 }
 
-function PortfolioTable({ artists, accent }: { artists: CatalogClientArtist[]; accent: string }) {
-  const totalValue = artists.reduce((s, a) => s + (a.catalog_value_est ?? 0), 0);
-  const totalRevenue = artists.reduce((s, a) => s + (a.monthly_revenue_est ?? 0), 0);
+// ── Actions context menu ──────────────────────────────────────────────────────
+
+function ActionsMenu({ client, onSwitch }: { client: ClientRow; onSwitch: (id: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    function handler(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [open]);
+
+  async function handleOpen() {
+    setLoading(true);
+    onSwitch(client.id);
+    await new Promise(r => setTimeout(r, 300));
+    setLoading(false);
+    setOpen(false);
+  }
+
+  const actions = [
+    { label: 'Open Catalog OS', icon: ArrowUpRight, color: client.accent, onClick: handleOpen },
+    { label: 'View Revenue',    icon: DollarSign,   color: '#10B981',     onClick: () => setOpen(false) },
+    { label: 'View Assets',     icon: Music,        color: '#06B6D4',     onClick: () => setOpen(false) },
+    { label: 'View Tasks',      icon: CheckCircle,  color: '#F59E0B',     onClick: () => setOpen(false) },
+    { label: 'Open Rights',     icon: ExternalLink, color: '#6B7280',     onClick: () => setOpen(false) },
+  ];
 
   return (
-    <div className="bg-[#0B0D10] border border-white/[0.06] rounded-2xl overflow-hidden">
-      <div className="grid grid-cols-7 px-5 py-2.5 border-b border-white/[0.05] text-[8.5px] font-mono text-white/20 uppercase tracking-widest">
-        <span className="col-span-2">Artist / Catalog</span>
-        <span>Genre</span>
-        <span>Role</span>
-        <span className="text-right">Catalog Value</span>
-        <span className="text-right">Monthly Rev</span>
-        <span className="text-right">Status</span>
-      </div>
-      {artists.map((a, i) => {
-        const sm = STATUS_META[a.status];
-        const rm = ARTIST_ROLE_META[a.artist_role];
+    <div ref={ref} style={{ position: 'relative', flexShrink: 0 }}>
+      <button
+        onClick={e => { e.stopPropagation(); setOpen(v => !v); }}
+        title="Actions"
+        style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          width: 28, height: 28, borderRadius: 7,
+          background: open ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.04)',
+          border: open ? '1px solid rgba(255,255,255,0.18)' : '1px solid rgba(255,255,255,0.08)',
+          color: 'rgba(255,255,255,0.5)', cursor: 'pointer', transition: 'all 0.12s',
+        }}
+        onMouseEnter={e => { if (!open) { const b = e.currentTarget as HTMLButtonElement; b.style.background = 'rgba(255,255,255,0.08)'; b.style.borderColor = 'rgba(255,255,255,0.14)'; } }}
+        onMouseLeave={e => { if (!open) { const b = e.currentTarget as HTMLButtonElement; b.style.background = 'rgba(255,255,255,0.04)'; b.style.borderColor = 'rgba(255,255,255,0.08)'; } }}
+      >
+        <MoreHorizontal size={13} color="rgba(255,255,255,0.5)" />
+      </button>
+
+      {open && (
+        <div style={{
+          position: 'absolute', right: 0, top: 'calc(100% + 5px)', zIndex: 200,
+          background: '#131417', border: '1px solid rgba(255,255,255,0.1)',
+          borderRadius: 11, boxShadow: '0 12px 40px rgba(0,0,0,0.7)',
+          minWidth: 190, overflow: 'hidden',
+        }}>
+          <div style={{ height: 1, background: `linear-gradient(90deg,transparent,${client.accent}55,transparent)`, marginBottom: 4 }} />
+          {actions.map((action, i) => {
+            const Icon = action.icon;
+            return (
+              <button
+                key={i}
+                onClick={e => { e.stopPropagation(); action.onClick(); }}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 9,
+                  width: '100%', padding: '8px 14px',
+                  background: 'transparent', border: 'none', cursor: 'pointer',
+                  color: action.color, fontSize: 12, fontWeight: 600, textAlign: 'left' as const,
+                  transition: 'background 0.1s',
+                }}
+                onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.05)'; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; }}
+              >
+                <div style={{
+                  width: 20, height: 20, borderRadius: 5, flexShrink: 0,
+                  background: `${action.color}12`, border: `1px solid ${action.color}20`,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>
+                  {loading && i === 0
+                    ? <Loader size={9} color={action.color} style={{ animation: 'spin 1s linear infinite' }} />
+                    : <Icon size={9} color={action.color} />
+                  }
+                </div>
+                {action.label}
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── KPI strip ─────────────────────────────────────────────────────────────────
+
+function KPIStrip() {
+  const avgHealth = Math.round(CLIENTS.reduce((s, c) => s + c.health, 0) / CLIENTS.length);
+  const openIssues = CLIENTS.reduce((s, c) => s + c.openIssues, 0);
+
+  const kpis = [
+    { label: 'Total Clients',   value: `${CLIENTS.length}`, icon: Users,          color: '#06B6D4' },
+    { label: 'Portfolio Value', value: '$9.4M',              icon: DollarSign,     color: '#10B981' },
+    { label: 'Monthly Revenue', value: '$451K / mo',         icon: TrendingUp,     color: '#F59E0B' },
+    { label: 'Avg Health',      value: `${avgHealth}`,       icon: Activity,       color: '#A3E635' },
+    { label: 'Open Issues',     value: `${openIssues}`,      icon: AlertTriangle,  color: openIssues > 0 ? '#EF4444' : '#6B7280' },
+  ];
+
+  return (
+    <div style={{
+      display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)',
+      borderBottom: '1px solid rgba(255,255,255,0.05)',
+    }}>
+      {kpis.map(k => {
+        const Icon = k.icon;
         return (
-          <div key={a.id}
-            className="grid grid-cols-7 items-center px-5 py-3 border-b border-white/[0.03] last:border-0 hover:bg-white/[0.02] transition-colors">
-            <div className="col-span-2 flex items-center gap-2.5">
-              <div className="w-6 h-6 rounded-lg flex items-center justify-center text-[10px] font-bold shrink-0"
-                style={{ background: `${accent}10`, color: accent }}>
-                {i + 1}
-              </div>
-              <div>
-                <p className="text-[11.5px] font-semibold text-white/65">{a.artist_name}</p>
-                {a.is_primary && (
-                  <span className="text-[8px] font-mono" style={{ color: accent }}>Primary</span>
-                )}
-              </div>
+          <div key={k.label} style={{
+            padding: '14px 18px', display: 'flex', alignItems: 'center', gap: 10,
+            borderRight: '1px solid rgba(255,255,255,0.04)',
+          }}>
+            <div style={{
+              width: 30, height: 30, borderRadius: 8, flexShrink: 0,
+              background: `${k.color}12`, border: `1px solid ${k.color}20`,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+              <Icon size={13} color={k.color} />
             </div>
-            <span className="text-[10.5px] text-white/30 truncate">{a.genre ?? '—'}</span>
-            <span>
-              <PillBadge label={rm.label} color={rm.color} />
-            </span>
-            <span className="text-right text-[11.5px] font-bold" style={{ color: accent }}>{fmt(a.catalog_value_est)}</span>
-            <span className="text-right text-[11.5px] text-white/50">{fmt(a.monthly_revenue_est)}</span>
-            <span className="text-right">
-              <PillBadge label={sm.label} color={sm.color} />
-            </span>
+            <div>
+              <div style={{ fontSize: 15, fontWeight: 800, color: '#F9FAFB', lineHeight: 1 }}>{k.value}</div>
+              <div style={{ fontSize: 9, fontFamily: 'monospace', color: 'rgba(255,255,255,0.3)', marginTop: 3, textTransform: 'uppercase' as const, letterSpacing: '0.06em' }}>{k.label}</div>
+            </div>
           </div>
         );
       })}
-      <div className="grid grid-cols-7 items-center px-5 py-3 bg-white/[0.02] border-t border-white/[0.05]">
-        <div className="col-span-3">
-          <p className="text-[9.5px] font-mono text-white/20 uppercase">Portfolio Total</p>
+    </div>
+  );
+}
+
+// ── Table row ─────────────────────────────────────────────────────────────────
+
+const COL = '2fr 80px 80px 80px 90px 80px 60px 120px 32px';
+
+function TableRow({ client, onSwitch }: { client: ClientRow; onSwitch: (id: string) => void }) {
+  const sm = STATUS_META[client.status];
+  const pm = PRIORITY_META[client.priority];
+
+  return (
+    <div
+      onClick={() => onSwitch(client.id)}
+      style={{
+        display: 'grid', gridTemplateColumns: COL, alignItems: 'center', gap: 12,
+        padding: '12px 18px', borderBottom: '1px solid rgba(255,255,255,0.04)',
+        cursor: 'pointer', transition: 'background 0.12s',
+      }}
+      onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.background = 'rgba(255,255,255,0.025)'; }}
+      onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.background = 'transparent'; }}
+    >
+      {/* Name */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+        <div style={{
+          width: 34, height: 34, borderRadius: 9, flexShrink: 0,
+          background: `${client.accent}14`, border: `1px solid ${client.accent}25`,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>
+          <Music size={14} color={client.accent} />
         </div>
-        <span />
-        <span className="text-right text-[13px] font-bold" style={{ color: accent }}>{fmt(totalValue)}</span>
-        <span className="text-right text-[13px] font-bold text-white/50">{fmt(totalRevenue)}</span>
-        <span />
+        <div style={{ minWidth: 0 }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: 'rgba(255,255,255,0.85)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>
+            {client.name}
+          </div>
+          <div style={{ fontSize: 9.5, color: 'rgba(255,255,255,0.25)', marginTop: 1 }}>
+            {client.genre} · {client.releases} rel · {client.streams}
+          </div>
+        </div>
+      </div>
+
+      {/* Status */}
+      <div><PillBadge label={sm.label} color={sm.color} /></div>
+
+      {/* Health */}
+      <div><HealthBar score={client.health} /></div>
+
+      {/* Priority */}
+      <div><PillBadge label={pm.label} color={pm.color} /></div>
+
+      {/* Catalog Value */}
+      <div style={{ fontSize: 13, fontWeight: 700, color: '#F9FAFB', fontFamily: 'monospace' }}>{client.catalogValue}</div>
+
+      {/* Monthly Rev */}
+      <div style={{ fontSize: 11, color: '#10B981', fontFamily: 'monospace' }}>{client.monthlyRevenue}</div>
+
+      {/* Tasks / Issues */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          <CheckCircle size={9} color="#06B6D4" />
+          <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)', fontFamily: 'monospace' }}>{client.activeTasks}</span>
+        </div>
+        {client.openIssues > 0 && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+            <AlertTriangle size={9} color="#EF4444" />
+            <span style={{ fontSize: 10, color: '#EF4444', fontFamily: 'monospace' }}>{client.openIssues}</span>
+          </div>
+        )}
+      </div>
+
+      {/* Manager */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+        <div style={{
+          width: 20, height: 20, borderRadius: '50%', flexShrink: 0,
+          background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>
+          <span style={{ fontSize: 8, color: 'rgba(255,255,255,0.5)', fontWeight: 700 }}>
+            {client.manager.split(' ').map(w => w[0]).join('').slice(0, 2)}
+          </span>
+        </div>
+        <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>
+          {client.manager.split(' ')[0]}
+        </span>
+      </div>
+
+      {/* Actions */}
+      <div onClick={e => e.stopPropagation()}>
+        <ActionsMenu client={client} onSwitch={onSwitch} />
       </div>
     </div>
   );
 }
 
+// ── Notes strip ───────────────────────────────────────────────────────────────
+
+function NotesStrip({ clients, onSwitch }: { clients: ClientRow[]; onSwitch: (id: string) => void }) {
+  return (
+    <div style={{ padding: '12px 18px 24px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+      {clients.map(c => (
+        <div key={c.id} style={{
+          display: 'flex', alignItems: 'flex-start', gap: 10,
+          padding: '10px 14px', borderRadius: 10,
+          background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)',
+        }}>
+          <div style={{ width: 6, height: 6, borderRadius: '50%', background: c.accent, flexShrink: 0, marginTop: 4 }} />
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <span style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.6)' }}>{c.name}</span>
+            <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', marginLeft: 8 }}>{c.notes}</span>
+          </div>
+          <button
+            onClick={() => onSwitch(c.id)}
+            style={{
+              flexShrink: 0, display: 'flex', alignItems: 'center', gap: 4,
+              fontSize: 10, fontWeight: 600, color: c.accent,
+              background: `${c.accent}10`, border: `1px solid ${c.accent}22`, borderRadius: 6,
+              padding: '3px 8px', cursor: 'pointer',
+            }}
+          >
+            <ExternalLink size={9} color={c.accent} /> View
+          </button>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ── Main ──────────────────────────────────────────────────────────────────────
+
+type FilterKey = 'All' | 'Active' | 'Onboarding' | 'At Risk';
+
+const FILTERS: { key: FilterKey; color: string }[] = [
+  { key: 'All',        color: '#06B6D4' },
+  { key: 'Active',     color: '#10B981' },
+  { key: 'Onboarding', color: '#06B6D4' },
+  { key: 'At Risk',    color: '#EF4444' },
+];
+
+const COLS = ['Client', 'Status', 'Health', 'Priority', 'Catalog Value', 'Mo. Revenue', 'Tasks', 'Manager', ''];
+
 export default function COSRoster() {
-  const { activeClient, loading } = useCatalogClient();
-  const [view, setView] = useState<'cards' | 'table'>('cards');
+  const { activeClient, switchClient } = useCatalogClient();
+  const accent = activeClient?.accent_color ?? '#10B981';
 
-  if (loading || !activeClient) {
-    return (
-      <div className="min-h-full bg-[#07080A] flex items-center justify-center">
-        <p className="text-[11px] text-white/20">Loading roster...</p>
-      </div>
-    );
-  }
+  const [filter, setFilter] = useState<FilterKey>('All');
+  const [search, setSearch] = useState('');
 
-  const typeMeta = CLIENT_TYPE_META[activeClient.type];
-  const accent = activeClient.accent_color;
-  const artists = activeClient.artists ?? [];
-  const active = artists.filter(a => a.status === 'active');
-  const onHold = artists.filter(a => a.status === 'on_hold');
-  const totalValue = artists.reduce((s, a) => s + (a.catalog_value_est ?? 0), 0);
-  const totalRevenue = artists.reduce((s, a) => s + (a.monthly_revenue_est ?? 0), 0);
-  const annualYield = totalValue > 0 ? ((totalRevenue * 12) / totalValue * 100).toFixed(1) : '—';
+  const filtered = CLIENTS.filter(c => {
+    const q = search.toLowerCase();
+    const matchSearch = !q || c.name.toLowerCase().includes(q) || c.genre.toLowerCase().includes(q) || c.manager.toLowerCase().includes(q);
+    if (!matchSearch) return false;
+    if (filter === 'Active')     return c.status === 'active';
+    if (filter === 'Onboarding') return c.status === 'onboarding';
+    if (filter === 'At Risk')    return c.health < 55 || c.openIssues > 2;
+    return true;
+  });
 
   return (
-    <div className="min-h-full bg-[#07080A]">
+    <div className="min-h-screen bg-[#07080A]">
       <CatalogPageHeader
         icon={Users}
-        title={`${activeClient.name} — Roster`}
-        subtitle={`${typeMeta.label} · ${artists.length} artist${artists.length !== 1 ? 's' : ''} · ${activeClient.territory ?? 'Worldwide'}`}
+        title="Catalog Clients"
+        subtitle="Client roster · admin overview · operational management"
         accentColor={accent}
-        badge={typeMeta.label}
-        actions={
-          <div className="flex items-center gap-1.5 bg-white/[0.04] border border-white/[0.07] rounded-xl p-1">
-            {(['cards', 'table'] as const).map(v => (
-              <button key={v} onClick={() => setView(v)}
-                className="px-3 py-1.5 rounded-lg text-[10.5px] font-medium capitalize transition-all"
-                style={view === v ? { background: `${accent}18`, color: accent, border: `1px solid ${accent}28` }
-                  : { color: 'rgba(255,255,255,0.3)', border: '1px solid transparent' }}>
-                {v}
-              </button>
-            ))}
-          </div>
-        }
+        badge="ADMIN"
       />
 
-      <div className="px-5 py-4 space-y-5">
-        {/* Summary KPIs */}
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5">
-          {[
-            { label: 'Total Artists',     value: artists.length.toString(),                    color: accent,     icon: Users },
-            { label: 'Active',            value: active.length.toString(),                      color: '#10B981',  icon: CheckCircle },
-            { label: 'Portfolio Value',   value: fmt(totalValue),                               color: accent,     icon: DollarSign },
-            { label: 'Monthly Revenue',   value: fmt(totalRevenue),                             color: '#06B6D4',  icon: TrendingUp },
-            { label: 'Annual Yield',      value: `${annualYield}%`,                             color: '#A3E635',  icon: BarChart2 },
-          ].map(({ label, value, color, icon: Icon }) => (
-            <div key={label} className="bg-[#0B0D10] border border-white/[0.06] rounded-xl p-3.5">
-              <div className="flex items-center gap-1.5 mb-1.5">
-                <Icon className="w-3 h-3" style={{ color }} />
-                <p className="text-[8.5px] font-mono text-white/20 uppercase tracking-wide">{label}</p>
-              </div>
-              <p className="text-[18px] font-bold" style={{ color }}>{value}</p>
-            </div>
+      <KPIStrip />
+
+      {/* Filter + search */}
+      <div style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        padding: '12px 18px', borderBottom: '1px solid rgba(255,255,255,0.04)', gap: 12,
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <Filter size={13} color="rgba(255,255,255,0.25)" />
+          {FILTERS.map(f => (
+            <button
+              key={f.key}
+              onClick={() => setFilter(f.key)}
+              style={{
+                padding: '4px 11px', borderRadius: 7, fontSize: 11, fontWeight: 600,
+                cursor: 'pointer', border: '1px solid',
+                background: filter === f.key ? `${f.color}18` : 'rgba(255,255,255,0.04)',
+                borderColor: filter === f.key ? `${f.color}35` : 'rgba(255,255,255,0.07)',
+                color: filter === f.key ? f.color : 'rgba(255,255,255,0.35)',
+                transition: 'all 0.12s',
+              }}
+            >{f.key}</button>
           ))}
         </div>
 
-        {onHold.length > 0 && (
-          <div className="flex items-start gap-2.5 bg-[#F59E0B]/[0.05] border border-[#F59E0B]/20 rounded-xl px-4 py-3">
-            <AlertCircle className="w-3.5 h-3.5 text-[#F59E0B] shrink-0 mt-0.5" />
-            <p className="text-[10.5px] text-[#F59E0B]/70">
-              {onHold.length} artist{onHold.length > 1 ? 's' : ''} currently on hold: {onHold.map(a => a.artist_name).join(', ')}
-            </p>
-          </div>
-        )}
-
-        {/* Territory / scope bar */}
-        <div className="flex items-center gap-4 bg-white/[0.02] border border-white/[0.05] rounded-xl px-4 py-3">
-          <Globe className="w-3.5 h-3.5 text-white/20 shrink-0" />
-          <div className="flex items-center gap-6 flex-wrap">
-            <div>
-              <p className="text-[8px] font-mono text-white/15 uppercase">Territory</p>
-              <p className="text-[10.5px] text-white/40">{activeClient.territory ?? 'Worldwide'}</p>
-            </div>
-            <div>
-              <p className="text-[8px] font-mono text-white/15 uppercase">Client Since</p>
-              <p className="text-[10.5px] text-white/40">{activeClient.client_since ?? '—'}</p>
-            </div>
-            <div>
-              <p className="text-[8px] font-mono text-white/15 uppercase">Catalog Rep</p>
-              <p className="text-[10.5px] text-white/40">{activeClient.catalog_rep ?? 'GMG Catalog Team'}</p>
-            </div>
-            {activeClient.total_releases && (
-              <div>
-                <p className="text-[8px] font-mono text-white/15 uppercase">Total Releases</p>
-                <p className="text-[10.5px] text-white/40">{activeClient.total_releases}</p>
-              </div>
-            )}
-          </div>
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 6, padding: '5px 10px',
+          borderRadius: 8, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', minWidth: 200,
+        }}>
+          <Search size={12} color="rgba(255,255,255,0.25)" />
+          <input
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder="Search clients..."
+            style={{ background: 'none', border: 'none', outline: 'none', fontSize: 11, color: 'rgba(255,255,255,0.7)', width: '100%' }}
+          />
         </div>
-
-        {/* Roster body */}
-        {view === 'cards' ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
-            {artists.map((a, i) => (
-              <ArtistCard key={a.id} artist={a} rank={i + 1} accent={accent} />
-            ))}
-          </div>
-        ) : (
-          <PortfolioTable artists={artists} accent={accent} />
-        )}
       </div>
+
+      {/* Table header */}
+      <div style={{
+        display: 'grid', gridTemplateColumns: COL, gap: 12,
+        padding: '7px 18px', borderBottom: '1px solid rgba(255,255,255,0.05)',
+      }}>
+        {COLS.map(col => (
+          <div key={col} style={{ fontSize: 8.5, fontFamily: 'monospace', color: 'rgba(255,255,255,0.2)', textTransform: 'uppercase' as const, letterSpacing: '0.1em' }}>{col}</div>
+        ))}
+      </div>
+
+      {/* Rows */}
+      {filtered.length === 0 ? (
+        <div style={{ padding: '48px 18px', textAlign: 'center' as const, color: 'rgba(255,255,255,0.2)', fontSize: 13 }}>
+          No clients match the current filter.
+        </div>
+      ) : (
+        filtered.map(c => <TableRow key={c.id} client={c} onSwitch={switchClient} />)
+      )}
+
+      {/* Count */}
+      <div style={{ padding: '10px 18px', borderTop: '1px solid rgba(255,255,255,0.04)' }}>
+        <span style={{ fontSize: 9.5, fontFamily: 'monospace', color: 'rgba(255,255,255,0.2)' }}>
+          {filtered.length} of {CLIENTS.length} clients
+        </span>
+      </div>
+
+      {/* Notes strip */}
+      <NotesStrip clients={filtered} onSwitch={switchClient} />
     </div>
   );
 }

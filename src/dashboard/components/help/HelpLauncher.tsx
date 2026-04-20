@@ -76,7 +76,7 @@ export default function HelpLauncher() {
     <div ref={ref} style={{ position: 'relative' }}>
       <button
         onClick={() => setMenuOpen(p => !p)}
-        title="Help"
+        title="Support"
         style={{
           display: 'flex', alignItems: 'center', gap: 5,
           padding: '5px 9px', borderRadius: 8,
@@ -102,7 +102,7 @@ export default function HelpLauncher() {
         }}
       >
         <HelpCircle size={14} />
-        <span style={{ fontSize: 11, fontWeight: 600, fontFamily: 'monospace', letterSpacing: '0.04em' }}>HELP</span>
+        <span style={{ fontSize: 11, fontWeight: 600, fontFamily: 'monospace', letterSpacing: '0.04em' }}>SUPPORT</span>
       </button>
 
       {menuOpen && (
@@ -130,7 +130,7 @@ export default function HelpLauncher() {
             display: 'flex', alignItems: 'center', justifyContent: 'space-between',
           }}>
             <div>
-              <div style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.7)' }}>Platform Help</div>
+              <div style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.7)' }}>Platform Support</div>
               <div style={{ fontFamily: 'monospace', fontSize: 8.5, color: 'rgba(255,255,255,0.2)', marginTop: 1 }}>
                 {pageLabel.toUpperCase()}
               </div>

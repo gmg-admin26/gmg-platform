@@ -68,7 +68,7 @@ function FloatingSupportButton() {
     <div ref={ref} style={{ position: 'fixed', bottom: 24, right: 24, zIndex: 600 }}>
       <button
         onClick={() => setOpen(p => !p)}
-        title="Help & Support"
+        title="Support"
         style={{
           display: 'flex', alignItems: 'center', gap: 6,
           padding: '8px 14px', borderRadius: 10,
@@ -94,7 +94,7 @@ function FloatingSupportButton() {
         }}
       >
         <HelpCircle size={14} />
-        <span style={{ fontSize: 11, fontWeight: 600, fontFamily: 'monospace', letterSpacing: '0.04em' }}>HELP</span>
+        <span style={{ fontSize: 11, fontWeight: 600, fontFamily: 'monospace', letterSpacing: '0.04em' }}>SUPPORT</span>
       </button>
 
       {open && (

@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Music, Disc, Album, Calendar, Flag, ChevronRight, Filter, Rocket, Clock } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
+import { Music, Disc, Album, Calendar, ChevronRight, Filter, Rocket, Clock, Plus, X } from 'lucide-react';
 import CatalogPageHeader from './CatalogPageHeader';
 import { useCatalogClient } from '../../context/CatalogClientContext';
 
@@ -266,24 +266,229 @@ const FORMAT_FILTERS: Array<{ value: Format | 'all'; label: string }> = [
   { value: 'album',  label: 'Albums' },
 ];
 
+// ── Add Release modal ─────────────────────────────────────────────────────────
+
+interface AddReleaseForm {
+  title: string;
+  format: Format;
+  target_date: string;
+  stage: Stage;
+  status: Status;
+  priority: Priority;
+  notes: string;
+}
+
+const BLANK_FORM: AddReleaseForm = {
+  title: '', format: 'single', target_date: '',
+  stage: 'concept', status: 'tentative', priority: 'medium', notes: '',
+};
+
+function AddReleaseModal({
+  onClose,
+  onAdd,
+  accent,
+  artistName,
+}: {
+  onClose: () => void;
+  onAdd: (r: FutureRelease) => void;
+  accent: string;
+  artistName: string;
+}) {
+  const [form, setForm] = useState<AddReleaseForm>(BLANK_FORM);
+  const overlayRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handler(e: KeyboardEvent) { if (e.key === 'Escape') onClose(); }
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, [onClose]);
+
+  function set<K extends keyof AddReleaseForm>(key: K, val: AddReleaseForm[K]) {
+    setForm(f => ({ ...f, [key]: val }));
+  }
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!form.title.trim()) return;
+    onAdd({
+      id: `new-${Date.now()}`,
+      client_id: '__new__',
+      artist: artistName,
+      title: form.title.trim(),
+      format: form.format,
+      target_date: form.target_date || 'TBD',
+      stage: form.stage,
+      status: form.status,
+      priority: form.priority,
+      notes: form.notes.trim(),
+    });
+    onClose();
+  }
+
+  const labelStyle: React.CSSProperties = { fontSize: 10, fontFamily: 'monospace', color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.08em', display: 'block', marginBottom: 5 };
+  const inputStyle: React.CSSProperties = {
+    width: '100%', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.09)',
+    borderRadius: 8, padding: '7px 10px', fontSize: 12, color: '#F9FAFB', outline: 'none',
+    boxSizing: 'border-box' as const,
+  };
+  const selectStyle: React.CSSProperties = { ...inputStyle, cursor: 'pointer' };
+
+  return (
+    <div
+      ref={overlayRef}
+      onClick={e => { if (e.target === overlayRef.current) onClose(); }}
+      style={{
+        position: 'fixed', inset: 0, zIndex: 800,
+        background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(4px)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+      }}
+    >
+      <div style={{
+        width: '100%', maxWidth: 480, background: '#10121A',
+        border: '1px solid rgba(255,255,255,0.09)', borderRadius: 18,
+        padding: '22px 24px', boxShadow: '0 24px 80px rgba(0,0,0,0.8)',
+        animation: 'fadeUp 0.16s ease-out',
+      }}>
+        <style>{`@keyframes fadeUp { from { transform: translateY(12px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }`}</style>
+
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <div style={{ width: 28, height: 28, borderRadius: 8, background: `${accent}18`, border: `1px solid ${accent}28`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Plus size={13} color={accent} />
+              </div>
+              <h2 style={{ fontSize: 15, fontWeight: 800, color: '#F9FAFB', margin: 0 }}>Add Planned Release</h2>
+            </div>
+            <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', marginTop: 4, marginLeft: 36 }}>{artistName}</p>
+          </div>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.3)', display: 'flex', padding: 4 }}>
+            <X size={16} />
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <div>
+            <label style={labelStyle}>Release Title *</label>
+            <input required style={inputStyle} placeholder="e.g. Untitled Single" value={form.title} onChange={e => set('title', e.target.value)} />
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <div>
+              <label style={labelStyle}>Format</label>
+              <select style={selectStyle} value={form.format} onChange={e => set('format', e.target.value as Format)}>
+                <option value="single">Single</option>
+                <option value="ep">EP</option>
+                <option value="album">Album</option>
+              </select>
+            </div>
+            <div>
+              <label style={labelStyle}>Target Date</label>
+              <input style={inputStyle} placeholder="e.g. Q3 2026" value={form.target_date} onChange={e => set('target_date', e.target.value)} />
+            </div>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
+            <div>
+              <label style={labelStyle}>Stage</label>
+              <select style={selectStyle} value={form.stage} onChange={e => set('stage', e.target.value as Stage)}>
+                {(Object.keys(STAGE_META) as Stage[]).map(s => <option key={s} value={s}>{STAGE_META[s].label}</option>)}
+              </select>
+            </div>
+            <div>
+              <label style={labelStyle}>Status</label>
+              <select style={selectStyle} value={form.status} onChange={e => set('status', e.target.value as Status)}>
+                {(Object.keys(STATUS_META) as Status[]).map(s => <option key={s} value={s}>{STATUS_META[s].label}</option>)}
+              </select>
+            </div>
+            <div>
+              <label style={labelStyle}>Priority</label>
+              <select style={selectStyle} value={form.priority} onChange={e => set('priority', e.target.value as Priority)}>
+                {(Object.keys(PRIORITY_META) as Priority[]).map(p => <option key={p} value={p}>{PRIORITY_META[p].label}</option>)}
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label style={labelStyle}>Notes</label>
+            <textarea
+              rows={3}
+              style={{ ...inputStyle, resize: 'vertical' as const }}
+              placeholder="Optional planning notes..."
+              value={form.notes}
+              onChange={e => set('notes', e.target.value)}
+            />
+          </div>
+
+          <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
+            <button
+              type="submit"
+              style={{
+                flex: 1, padding: '9px 16px', borderRadius: 10, cursor: 'pointer',
+                background: `${accent}18`, border: `1px solid ${accent}30`,
+                color: accent, fontSize: 12, fontWeight: 700,
+              }}
+            >
+              Add Release
+            </button>
+            <button
+              type="button"
+              onClick={onClose}
+              style={{
+                padding: '9px 16px', borderRadius: 10, cursor: 'pointer',
+                background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.09)',
+                color: 'rgba(255,255,255,0.4)', fontSize: 12, fontWeight: 600,
+              }}
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+// ── Main page ─────────────────────────────────────────────────────────────────
+
 export default function COSFutures() {
   const { activeClient } = useCatalogClient();
   const accent = activeClient?.accent_color ?? '#10B981';
   const clientId = activeClient?.id ?? '';
+  const artistName = activeClient?.name ?? 'Artist';
 
   const [formatFilter, setFormatFilter] = useState<Format | 'all'>('all');
+  const [addOpen, setAddOpen] = useState(false);
+  const [localReleases, setLocalReleases] = useState<FutureRelease[]>([]);
 
-  const releases = ALL_RELEASES.filter(r => {
-    if (r.client_id !== clientId) return false;
+  const allReleases = [...ALL_RELEASES, ...localReleases];
+
+  const releases = allReleases.filter(r => {
+    const matchClient = r.client_id === clientId || r.client_id === '__new__';
+    if (!matchClient) return false;
     if (formatFilter !== 'all' && r.format !== formatFilter) return false;
     return true;
   });
 
   const counts = {
-    single: ALL_RELEASES.filter(r => r.client_id === clientId && r.format === 'single').length,
-    ep:     ALL_RELEASES.filter(r => r.client_id === clientId && r.format === 'ep').length,
-    album:  ALL_RELEASES.filter(r => r.client_id === clientId && r.format === 'album').length,
+    single: allReleases.filter(r => (r.client_id === clientId || r.client_id === '__new__') && r.format === 'single').length,
+    ep:     allReleases.filter(r => (r.client_id === clientId || r.client_id === '__new__') && r.format === 'ep').length,
+    album:  allReleases.filter(r => (r.client_id === clientId || r.client_id === '__new__') && r.format === 'album').length,
   };
+
+  function handleAdd(r: FutureRelease) {
+    setLocalReleases(prev => [...prev, r]);
+  }
+
+  const addButton = (
+    <button
+      onClick={() => setAddOpen(true)}
+      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold transition-all"
+      style={{ background: `${accent}18`, border: `1px solid ${accent}30`, color: accent }}
+    >
+      <Plus className="w-3.5 h-3.5" />
+      Add Release
+    </button>
+  );
 
   return (
     <div className="min-h-screen bg-[#07080A]">
@@ -293,6 +498,7 @@ export default function COSFutures() {
         subtitle="Planned release schedule · upcoming music pipeline"
         accentColor={accent}
         badge="PIPELINE"
+        actions={addButton}
       />
 
       <div className="px-6 pt-5 pb-8">
@@ -321,25 +527,36 @@ export default function COSFutures() {
           })}
         </div>
 
-        {/* Format filter */}
-        <div className="flex items-center gap-2 mb-5">
-          <Filter className="w-3.5 h-3.5 text-white/25 shrink-0" />
-          <div className="flex items-center gap-1.5">
-            {FORMAT_FILTERS.map(f => (
-              <button
-                key={f.value}
-                onClick={() => setFormatFilter(f.value as Format | 'all')}
-                className="px-3 py-1 rounded-lg text-[11px] font-medium transition-all"
-                style={
-                  formatFilter === f.value
-                    ? { background: `${accent}18`, color: accent, border: `1px solid ${accent}30` }
-                    : { background: 'rgba(255,255,255,0.04)', color: 'rgba(255,255,255,0.35)', border: '1px solid rgba(255,255,255,0.07)' }
-                }
-              >
-                {f.label}
-              </button>
-            ))}
+        {/* Filter + Add */}
+        <div className="flex items-center justify-between gap-3 mb-5">
+          <div className="flex items-center gap-2">
+            <Filter className="w-3.5 h-3.5 text-white/25 shrink-0" />
+            <div className="flex items-center gap-1.5">
+              {FORMAT_FILTERS.map(f => (
+                <button
+                  key={f.value}
+                  onClick={() => setFormatFilter(f.value as Format | 'all')}
+                  className="px-3 py-1 rounded-lg text-[11px] font-medium transition-all"
+                  style={
+                    formatFilter === f.value
+                      ? { background: `${accent}18`, color: accent, border: `1px solid ${accent}30` }
+                      : { background: 'rgba(255,255,255,0.04)', color: 'rgba(255,255,255,0.35)', border: '1px solid rgba(255,255,255,0.07)' }
+                  }
+                >
+                  {f.label}
+                </button>
+              ))}
+            </div>
           </div>
+
+          <button
+            onClick={() => setAddOpen(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold transition-all"
+            style={{ background: `${accent}14`, border: `1px solid ${accent}28`, color: accent }}
+          >
+            <Plus className="w-3 h-3" />
+            Add Release
+          </button>
         </div>
 
         {/* Release list */}
@@ -352,7 +569,13 @@ export default function COSFutures() {
               <Rocket className="w-5 h-5" style={{ color: accent }} />
             </div>
             <p className="text-white/40 text-[13px]">No releases planned yet for this filter.</p>
-            <p className="text-white/20 text-[11px] mt-1">Switch clients or adjust the format filter.</p>
+            <button
+              onClick={() => setAddOpen(true)}
+              className="mt-4 flex items-center gap-1.5 px-4 py-2 rounded-lg text-[12px] font-semibold transition-all"
+              style={{ background: `${accent}18`, border: `1px solid ${accent}30`, color: accent }}
+            >
+              <Plus className="w-3.5 h-3.5" /> Add First Release
+            </button>
           </div>
         ) : (
           <div className="flex flex-col gap-3">
@@ -377,6 +600,15 @@ export default function COSFutures() {
           </div>
         </div>
       </div>
+
+      {addOpen && (
+        <AddReleaseModal
+          onClose={() => setAddOpen(false)}
+          onAdd={handleAdd}
+          accent={accent}
+          artistName={artistName}
+        />
+      )}
     </div>
   );
 }
