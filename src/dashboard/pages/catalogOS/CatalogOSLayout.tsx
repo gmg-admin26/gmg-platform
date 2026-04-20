@@ -4,7 +4,7 @@ import {
   Library, BarChart2, DollarSign, CheckSquare, Calendar, Megaphone,
   Users, Heart, Mic2, TrendingUp, ShoppingBag, FileText, Video, Globe,
   ChevronRight, BookOpen, Bug, Activity, Layers, Wallet, LogOut,
-  HelpCircle, X,
+  HelpCircle, X, Rocket,
 } from 'lucide-react';
 import { useHelp } from '../../context/HelpContext';
 import { CatalogClientProvider, useCatalogClient } from '../../context/CatalogClientContext';
@@ -19,6 +19,7 @@ const GROUP_A = [
   { icon: Megaphone,   label: 'Campaigns',          slug: 'campaigns',   end: false },
   { icon: Heart,       label: 'Fan Intelligence',   slug: 'fans',        end: false },
   { icon: Users,       label: 'Fan OS',              slug: 'fan-os',      end: false },
+  { icon: Rocket,      label: 'Futures',             slug: 'futures',     end: false },
   { icon: Calendar,    label: '12-Month Plan',       slug: 'timeline',    end: false },
   { icon: Video,       label: 'Reports',            slug: 'meetings',    end: false },
   { icon: BarChart2,   label: 'Brand Health',       slug: 'brand',       end: false },
@@ -56,7 +57,7 @@ function FloatingSupportButton() {
   const labelMap: Record<string, string> = {
     'app': 'Overview', 'value': 'Catalog Value', 'assets': 'Asset Library',
     'revenue': 'Revenue', 'campaigns': 'Campaigns', 'fans': 'Fan Intelligence', 'fan-os': 'Fan OS',
-    'timeline': '12-Month Plan', 'meetings': 'Reports', 'brand': 'Brand Health',
+    'futures': 'Futures', 'timeline': '12-Month Plan', 'meetings': 'Reports', 'brand': 'Brand Health',
     'rights': 'Rights + Contracts', 'entities': 'Business Entities',
     'tasks': 'Tasks', 'progress': 'Team Progress', 'roster': 'Roster',
     'touring': 'Touring', 'inventory': 'Inventory + Merch', 'workers': 'Project OS',

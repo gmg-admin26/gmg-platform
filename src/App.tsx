@@ -119,6 +119,7 @@ import COSRights from './dashboard/pages/catalogOS/COSRights';
 import COSWorkers from './dashboard/pages/catalogOS/COSWorkers';
 import COSMeetings from './dashboard/pages/catalogOS/COSMeetings';
 import COSEntities from './dashboard/pages/catalogOS/COSEntities';
+import COSFutures from './dashboard/pages/catalogOS/COSFutures';
 import DealPipeline from './dashboard/pages/DealPipeline';
 import WeeklySignings from './dashboard/pages/WeeklySignings';
 import ArtistOSCampaignCenter from './dashboard/pages/ArtistOSCampaignCenter';
@@ -220,6 +221,7 @@ function App() {
             <Route path="workers"   element={<COSWorkers />} />
             <Route path="meetings"  element={<COSMeetings />} />
             <Route path="entities"  element={<COSEntities />} />
+            <Route path="futures"   element={<COSFutures />} />
           </Route>
           <Route path="/rocksteady/login" element={<Navigate to="/login/rocksteady" replace />} />
           <Route path="/dashboard" element={<DashboardLayout />}>
