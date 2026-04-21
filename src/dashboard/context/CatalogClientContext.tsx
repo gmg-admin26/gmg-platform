@@ -38,8 +38,10 @@ export function CatalogClientProvider({ children }: { children: ReactNode }) {
       const all = await fetchAllClients();
       setClients(all);
       if (all.length > 0) {
+        const authClientId = localStorage.getItem('catalogos_client_id') || sessionStorage.getItem('catalogos_client_id') || '';
         const saved = localStorage.getItem(STORAGE_KEY);
-        const match = saved ? all.find(c => c.id === saved) : null;
+        const preferredId = authClientId || saved;
+        const match = preferredId ? all.find(c => c.id === preferredId) : null;
         const target = match ?? all[0];
         await loadClient(target.id);
       }

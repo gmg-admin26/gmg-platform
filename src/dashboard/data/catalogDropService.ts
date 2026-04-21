@@ -25,7 +25,6 @@ export async function initCatalogDropState(): Promise<void> {
     const { data } = await supabase
       .from('catalog_lifecycle_events')
       .select('client_id, state')
-      .in('state', ['dropped_pending', 'dropped_complete'])
       .order('initiated_at', { ascending: false });
     if (!data) return;
     const seen = new Set<string>();
@@ -97,7 +96,6 @@ export async function fetchCatalogDroppedQueue(): Promise<CatalogLifecycleEvent[
     const { data, error } = await supabase
       .from('catalog_lifecycle_events')
       .select('*')
-      .in('state', ['dropped_pending', 'dropped_complete'])
       .order('initiated_at', { ascending: false });
 
     if (error || !data) return [];
@@ -107,8 +105,11 @@ export async function fetchCatalogDroppedQueue(): Promise<CatalogLifecycleEvent[
     for (const row of data) {
       if (!seen.has(row.client_id)) {
         seen.add(row.client_id);
-        setLocalCatalogState(row.client_id, row.state as CatalogLifecycleState);
-        result.push(row as CatalogLifecycleEvent);
+        const state = row.state as CatalogLifecycleState;
+        setLocalCatalogState(row.client_id, state);
+        if (state === 'dropped_pending' || state === 'dropped_complete') {
+          result.push(row as CatalogLifecycleEvent);
+        }
       }
     }
     return result;
@@ -129,11 +130,12 @@ export async function fetchLifecycleEventForClient(clientId: string): Promise<Ca
       .from('catalog_lifecycle_events')
       .select('*')
       .eq('client_id', clientId)
-      .in('state', ['dropped_pending', 'dropped_complete'])
       .order('initiated_at', { ascending: false })
       .limit(1)
       .maybeSingle();
     if (error || !data) return null;
+    const state = data.state as CatalogLifecycleState;
+    if (state === 'active') return null;
     return data as CatalogLifecycleEvent;
   } catch {
     return null;
