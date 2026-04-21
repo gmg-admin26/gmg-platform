@@ -154,11 +154,11 @@ const ALL_RELEASES: FutureRelease[] = [
     notes: 'Brand partnership collab single. Partner not yet announced. Budget approved, legal in progress.',
   },
 
-  // Placeholder Artist 03
+  // Virgin Catalog Artist
   {
     id: 'pa-01',
     client_id: 'a3000000-0000-0000-0000-000000000003',
-    artist: 'Placeholder Artist 03',
+    artist: 'Virgin Catalog Artist',
     title: '[Catalog Single TBD]',
     format: 'single',
     target_date: 'Q3 2026',
@@ -170,7 +170,7 @@ const ALL_RELEASES: FutureRelease[] = [
   {
     id: 'pa-02',
     client_id: 'a3000000-0000-0000-0000-000000000003',
-    artist: 'Placeholder Artist 03',
+    artist: 'Virgin Catalog Artist',
     title: '[Back Catalog Reissue EP]',
     format: 'ep',
     target_date: 'Q4 2026',

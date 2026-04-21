@@ -72,7 +72,7 @@ export const ALL_CATALOG_CLIENTS: CatalogClientRow[] = [
   },
   {
     id: 'a3000000-0000-0000-0000-000000000003',
-    name: 'Placeholder Artist 03',
+    name: 'Virgin Catalog Artist',
     status: 'onboarding',
     health: 42,
     priority: 'medium',

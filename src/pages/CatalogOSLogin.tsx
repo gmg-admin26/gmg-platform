@@ -322,7 +322,7 @@ export default function CatalogOSLogin() {
                   { label: 'Admin', email: 'catalog@gmg.ai', password: 'GMGcatalog123!' },
                   { label: 'Bassnectar', email: 'client@bassnectar.net', password: 'bassnectar123' },
                   { label: 'Santigold', email: 'client@santigold.com', password: 'santigold123' },
-                  { label: 'Artist 03', email: 'client@artist03.com', password: 'artist03123' },
+                  { label: 'Virgin Catalog', email: 'client@artist03.com', password: 'artist03123' },
                 ].map(cred => (
                   <button
                     key={cred.label}

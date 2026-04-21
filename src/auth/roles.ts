@@ -75,7 +75,7 @@ export const CATALOG_OS_USERS: CatalogOSUser[] = [
     email: 'client@artist03.com',
     password: 'artist03123',
     role: 'catalog_owner',
-    displayName: 'Placeholder Artist 03',
+    displayName: 'Virgin Catalog Artist',
     clientId: 'a3000000-0000-0000-0000-000000000003',
   },
 ];

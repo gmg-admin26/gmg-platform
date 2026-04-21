@@ -1,6 +1,6 @@
 // Resolves per-client profile data for COSOverview.
-// Bassnectar data re-exported from its dedicated file; Santigold and Placeholder
-// Artist 03 carry parallel structures with their own realistic data.
+// Bassnectar data re-exported from its dedicated file; Santigold and Virgin
+// Catalog Artist carry parallel structures with their own realistic data.
 
 import {
   BN_META, BN_METRICS, BN_METRICS_LIST, BN_CURRENT_STATUS,
@@ -292,13 +292,13 @@ const SANTIGOLD_PROFILE: ClientProfileData = {
   COMMS: SG_COMMS,
 };
 
-// ── Placeholder Artist 03 ────────────────────────────────────────────────────
+// ── Virgin Catalog Artist ────────────────────────────────────────────────────
 
 const PA_META: MetaShape = {
-  catalog_name: 'Artist 03 Catalog',
-  artist_name: 'Placeholder Artist 03',
+  catalog_name: 'Virgin Catalog Artist',
+  artist_name: 'Virgin Catalog Artist',
   logo_url: '',
-  company_name: 'Artist 03 Music LLC',
+  company_name: 'Virgin Catalog Music LLC',
   status: 'onboarding',
   status_label: 'Onboarding',
   status_color: '#3B82F6',
@@ -312,7 +312,7 @@ const PA_META: MetaShape = {
   years_active: '2019–present',
   total_releases: 6,
   description:
-    'Placeholder Artist 03 is a newly onboarded catalog client currently in the assessment and rights clearance phase. The catalog includes 6 releases with 42M all-time streams. GMG is conducting a full catalog audit, rights verification, and opportunity assessment. Full operational management is expected to begin in May 2026.',
+    'Virgin Catalog Artist is a newly onboarded catalog client currently in the assessment and rights clearance phase. The catalog includes 6 releases with 42M all-time streams. GMG is conducting a full catalog audit, rights verification, and opportunity assessment. Full operational management is expected to begin in May 2026.',
   strategic_focus:
     'Onboarding + rights clearance · Catalog audit · Opportunity assessment · Full management target: May 2026',
 };
@@ -331,7 +331,7 @@ const PA_METRICS: MetricsMap = {
 
 const PA_CURRENT_STATUS: CurrentStatusShape = {
   headline: 'Onboarding + Rights Clearance In Progress',
-  summary: 'Placeholder Artist 03 is in the initial onboarding phase. GMG is conducting a full catalog audit, verifying rights ownership, and building the operational baseline. Full management is expected to begin in May 2026 pending completion of rights clearance and initial assessment.',
+  summary: 'Virgin Catalog Artist is in the initial onboarding phase. GMG is conducting a full catalog audit, verifying rights ownership, and building the operational baseline. Full management is expected to begin in May 2026 pending completion of rights clearance and initial assessment.',
   dimensions: [
     { label: 'Catalog Audit', status: 'in_progress', color: '#F59E0B', detail: 'Full catalog inventory and metadata audit underway. 38 assets identified across 6 releases.' },
     { label: 'Rights Clearance', status: 'in_progress', color: '#F59E0B', detail: 'Rights verification in progress. Master ownership confirmed for 4 of 6 releases. 2 pending co-ownership review.' },
@@ -347,7 +347,7 @@ const PA_CURRENT_STATUS: CurrentStatusShape = {
 const PA_ENTITIES: EntitiesShape = [
   {
     id: 'artist03-music',
-    name: 'Artist 03 Music LLC',
+    name: 'Virgin Catalog Music LLC',
     type: 'Record Company / Catalog',
     role: 'Master Recording Owner',
     color: '#3B82F6',
