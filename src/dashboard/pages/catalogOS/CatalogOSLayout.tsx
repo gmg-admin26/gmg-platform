@@ -11,7 +11,15 @@ import { CatalogClientProvider, useCatalogClient } from '../../context/CatalogCl
 import CatalogClientSwitcher from '../../components/catalog/CatalogClientSwitcher';
 import { useAuth } from '../../../auth/AuthContext';
 
-const GROUP_A = [
+interface NavItemDef {
+  icon: typeof Library;
+  label: string;
+  slug: string;
+  end: boolean;
+  adminOnly?: boolean;
+}
+
+const GROUP_A: NavItemDef[] = [
   { icon: Library,     label: 'Overview',          slug: 'overview',    end: false },
   { icon: TrendingUp,  label: 'Catalog Value',      slug: 'value',       end: false },
   { icon: Layers,      label: 'Asset Library',      slug: 'assets',      end: false },
@@ -19,7 +27,7 @@ const GROUP_A = [
   { icon: Megaphone,   label: 'Campaigns',          slug: 'campaigns',   end: false },
   { icon: Heart,       label: 'Fan Intelligence',   slug: 'fans',        end: false },
   { icon: Users,       label: 'Fan OS',              slug: 'fan-os',      end: false },
-  { icon: Rocket,      label: 'Futures',             slug: 'futures',     end: false },
+  { icon: Rocket,      label: 'Futures',             slug: 'futures',     end: false, adminOnly: true },
   { icon: Calendar,    label: '12-Month Plan',       slug: 'timeline',    end: false },
   { icon: Video,       label: 'Reports',            slug: 'meetings',    end: false },
   { icon: BarChart2,   label: 'Brand Health',       slug: 'brand',       end: false },
@@ -27,11 +35,11 @@ const GROUP_A = [
   { icon: Globe,       label: 'Business Entities',  slug: 'entities',    end: false },
 ];
 
-const GROUP_B = [
+const GROUP_B: NavItemDef[] = [
   { icon: CheckSquare, label: 'Tasks',              slug: 'tasks',         end: false },
   { icon: Activity,    label: 'Team Progress',      slug: 'progress',      end: false },
-  { icon: Users,       label: 'Catalog Clients',    slug: 'roster',        end: false },
-  { icon: UserMinus,   label: 'Dropped Queue',      slug: 'dropped-queue', end: false },
+  { icon: Users,       label: 'Catalog Clients',    slug: 'roster',        end: false, adminOnly: true },
+  { icon: UserMinus,   label: 'Dropped Queue',      slug: 'dropped-queue', end: false, adminOnly: true },
   { icon: Mic2,        label: 'Touring',            slug: 'touring',       end: false },
   { icon: ShoppingBag, label: 'Inventory + Merch',  slug: 'inventory',     end: false },
   { icon: Wallet,      label: 'Project OS',          slug: 'workers',       end: false },
@@ -190,12 +198,16 @@ function SidebarNav() {
   const { catalogOSAuth, logoutCatalogOS } = useAuth();
   const ACCENT = activeClient?.accent_color ?? '#10B981';
 
+  const isAdmin = catalogOSAuth.role === 'catalog_admin' || !catalogOSAuth.clientId;
   const isClientEntry = location.pathname.startsWith('/catalog/app');
   const BASE = isClientEntry ? '/catalog/app' : '/dashboard/catalog-os';
 
+  const filteredA = isAdmin ? GROUP_A : GROUP_A.filter(i => !i.adminOnly);
+  const filteredB = isAdmin ? GROUP_B : GROUP_B.filter(i => !i.adminOnly);
+
   const toPath = (slug: string) => slug === '' ? BASE : `${BASE}/${slug}`;
 
-  function NavItem({ item }: { item: typeof GROUP_A[0] }) {
+  function NavItem({ item }: { item: NavItemDef }) {
     const path = toPath(item.slug);
     return (
       <NavLink
@@ -236,24 +248,24 @@ function SidebarNav() {
         </div>
       </div>
 
-      <CatalogClientSwitcher />
+      {isAdmin && <CatalogClientSwitcher />}
 
       <nav className="flex-1 py-2 overflow-y-auto">
         <div className="px-4 pt-2 pb-1">
           <span className="text-[8px] font-mono text-white/15 uppercase tracking-[0.18em]">Strategic</span>
         </div>
-        {GROUP_A.map(item => <NavItem key={item.slug} item={item} />)}
+        {filteredA.map(item => <NavItem key={item.slug} item={item} />)}
 
         <div className="mx-4 my-2 h-[1px] bg-white/[0.05]" />
 
         <div className="px-4 pt-1 pb-1">
           <span className="text-[8px] font-mono text-white/15 uppercase tracking-[0.18em]">Operations</span>
         </div>
-        {GROUP_B.map(item => <NavItem key={item.slug} item={item} />)}
+        {filteredB.map(item => <NavItem key={item.slug} item={item} />)}
       </nav>
 
       <div className="px-4 py-3 border-t border-white/[0.05] shrink-0 space-y-1">
-        {isClientEntry && catalogOSAuth.authenticated && (
+        {catalogOSAuth.authenticated && (
           <button
             onClick={logoutCatalogOS}
             className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded text-[11px] text-white/30 hover:text-white/65 hover:bg-white/[0.04] transition-all group"

@@ -132,6 +132,17 @@ import LabelDetailPage from './dashboard/pages/LabelDetailPage';
 import FanOS from './dashboard/pages/FanOS';
 import SystemHub from './pages/SystemHub';
 
+function CatalogOSIndexDispatch() {
+  const cosRole = (() => {
+    try { return localStorage.getItem('catalogos_role') || sessionStorage.getItem('catalogos_role') || ''; } catch { return ''; }
+  })();
+  const cosClientId = (() => {
+    try { return localStorage.getItem('catalogos_client_id') || sessionStorage.getItem('catalogos_client_id') || ''; } catch { return ''; }
+  })();
+  if (cosRole === 'catalog_admin' || !cosClientId) return <COSRoster />;
+  return <COSOverview />;
+}
+
 function PublicLayout() {
   return (
     <div className="min-h-screen bg-black">
@@ -204,7 +215,7 @@ function App() {
           <Route path="/catalog/login" element={<CatalogOSLogin />} />
           <Route path="/catalog-os/login" element={<CatalogOSLogin />} />
           <Route path="/catalog/app" element={<CatalogOSProtectedRoute><CatalogOSLayout /></CatalogOSProtectedRoute>}>
-            <Route index element={<COSRoster />} />
+            <Route index element={<CatalogOSIndexDispatch />} />
             <Route path="roster"        element={<COSRoster />} />
             <Route path="overview"      element={<COSOverview />} />
             <Route path="dropped-queue" element={<COSDroppedQueue />} />

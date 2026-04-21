@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Library, TrendingUp, TrendingDown, AlertCircle, Clock, ChevronRight, Zap, DollarSign, FileText, CheckSquare, Building2, Users, Mic2, MapPin, Mail, Send, MessageSquare, Bot, User, Flag, ArrowUpRight, Calendar, Megaphone, ShoppingBag, Music, Scale, Star, Target, Activity, RefreshCw, ExternalLink, Video, Globe, BarChart2, Heart, Shield, Rocket, Database, Search, BarChart, PieChart, Headphones, Settings, Lock, UserMinus, ArrowLeft } from 'lucide-react';
-import { isClientDropped, getDropRecord } from '../../data/catalogDropService';
+import { isClientDropped, fetchLifecycleEventForClient, initCatalogDropState, type CatalogLifecycleEvent } from '../../data/catalogDropService';
+import { useAuth } from '../../../auth/AuthContext';
 import OperatorTeamGrid from '../../components/artistOS/OperatorTeamGrid';
 import { getClientProfile } from '../../data/catalogClientProfiles';
 import { useTasks } from '../../context/TaskContext';
@@ -169,11 +170,30 @@ export default function COSOverview() {
   const [now, setNow] = useState(new Date());
   const { openSubmit } = useTasks();
   const navigate = useNavigate();
-  const { activeClient } = useCatalogClient();
+  const { activeClient, switchClient } = useCatalogClient();
+  const { catalogOSAuth } = useAuth();
+  const isAdmin = catalogOSAuth.role === 'catalog_admin' || !catalogOSAuth.clientId;
+
+  useEffect(() => {
+    if (!isAdmin && catalogOSAuth.clientId && activeClient?.id !== catalogOSAuth.clientId) {
+      switchClient(catalogOSAuth.clientId);
+    }
+  }, [isAdmin, catalogOSAuth.clientId, activeClient?.id, switchClient]);
+
   useEffect(() => {
     const t = setInterval(() => setNow(new Date()), 1000);
     return () => clearInterval(t);
   }, []);
+
+  const [dropRecord, setDropRecord] = useState<CatalogLifecycleEvent | null>(null);
+  useEffect(() => {
+    initCatalogDropState();
+    if (activeClient) {
+      fetchLifecycleEventForClient(activeClient.id).then(setDropRecord);
+    } else {
+      setDropRecord(null);
+    }
+  }, [activeClient?.id]);
 
   const profile = getClientProfile(activeClient?.id);
   const { META, METRICS, METRICS_LIST, CURRENT_STATUS, ENTITIES, WEEKLY_SNAPSHOT, TASKS, EXPECTED_ANNUAL_OUTCOMES, AI_RECOMMENDATIONS, ACCOUNTING, COMMS } = profile;
@@ -182,30 +202,29 @@ export default function COSOverview() {
   const openTasks = TASKS.filter(t => t.status !== 'completed');
   const flaggedTasks = TASKS.filter(t => t.flagged);
 
-  // Dropped client — show locked overlay instead of full profile
   const clientDropped = activeClient ? isClientDropped(activeClient.id) : false;
-  const dropRecord = activeClient ? getDropRecord(activeClient.id) : null;
 
   if (clientDropped && activeClient) {
     return (
       <div className="min-h-full bg-[#07080A]">
-        {/* Back to roster */}
-        <div style={{ padding: '12px 18px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-          <button
-            onClick={() => navigate('/catalog/app/roster')}
-            style={{
-              display: 'flex', alignItems: 'center', gap: 6,
-              padding: '6px 12px', borderRadius: 8, cursor: 'pointer',
-              background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)',
-              color: 'rgba(255,255,255,0.45)', fontSize: 11, fontWeight: 600,
-              transition: 'all 0.12s',
-            }}
-            onMouseEnter={e => { const b = e.currentTarget; b.style.background = 'rgba(255,255,255,0.07)'; b.style.color = 'rgba(255,255,255,0.7)'; }}
-            onMouseLeave={e => { const b = e.currentTarget; b.style.background = 'rgba(255,255,255,0.04)'; b.style.color = 'rgba(255,255,255,0.45)'; }}
-          >
-            <ArrowLeft size={12} /> Back to Catalog Clients
-          </button>
-        </div>
+        {isAdmin && (
+          <div style={{ padding: '12px 18px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+            <button
+              onClick={() => navigate('/catalog/app/roster')}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 6,
+                padding: '6px 12px', borderRadius: 8, cursor: 'pointer',
+                background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)',
+                color: 'rgba(255,255,255,0.45)', fontSize: 11, fontWeight: 600,
+                transition: 'all 0.12s',
+              }}
+              onMouseEnter={e => { const b = e.currentTarget; b.style.background = 'rgba(255,255,255,0.07)'; b.style.color = 'rgba(255,255,255,0.7)'; }}
+              onMouseLeave={e => { const b = e.currentTarget; b.style.background = 'rgba(255,255,255,0.04)'; b.style.color = 'rgba(255,255,255,0.45)'; }}
+            >
+              <ArrowLeft size={12} /> Back to Catalog Clients
+            </button>
+          </div>
+        )}
 
         {/* Lock banner */}
         <div style={{
@@ -244,14 +263,14 @@ export default function COSOverview() {
             but remains viewable by admin for historical reference and investor review.
           </p>
 
-          {dropRecord?.reason && (
+          {dropRecord?.notes && (
             <div style={{
               marginBottom: 20, padding: '10px 16px', borderRadius: 10,
               background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)',
               maxWidth: 400,
             }}>
               <span style={{ fontSize: 9.5, fontFamily: 'monospace', color: 'rgba(255,255,255,0.25)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Exit Reason: </span>
-              <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.45)' }}>{dropRecord.reason}</span>
+              <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.45)' }}>{dropRecord.notes}</span>
             </div>
           )}
 
@@ -275,30 +294,31 @@ export default function COSOverview() {
             ))}
           </div>
 
-          {/* Actions */}
-          <div style={{ display: 'flex', gap: 10 }}>
-            <button
-              onClick={() => navigate('/catalog/app/dropped-queue')}
-              style={{
-                display: 'flex', alignItems: 'center', gap: 6,
-                padding: '9px 16px', borderRadius: 10, cursor: 'pointer',
-                background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.25)',
-                color: '#10B981', fontSize: 12, fontWeight: 700,
-              }}
-            >
-              <RefreshCw size={12} /> Reinstate from Dropped Queue
-            </button>
-            <button
-              onClick={() => navigate('/catalog/app/roster')}
-              style={{
-                padding: '9px 14px', borderRadius: 10, cursor: 'pointer',
-                background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.09)',
-                color: 'rgba(255,255,255,0.4)', fontSize: 12, fontWeight: 600,
-              }}
-            >
-              Back to Roster
-            </button>
-          </div>
+          {isAdmin && (
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button
+                onClick={() => navigate('/catalog/app/dropped-queue')}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 6,
+                  padding: '9px 16px', borderRadius: 10, cursor: 'pointer',
+                  background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.25)',
+                  color: '#10B981', fontSize: 12, fontWeight: 700,
+                }}
+              >
+                <RefreshCw size={12} /> Reinstate from Dropped Queue
+              </button>
+              <button
+                onClick={() => navigate('/catalog/app/roster')}
+                style={{
+                  padding: '9px 14px', borderRadius: 10, cursor: 'pointer',
+                  background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.09)',
+                  color: 'rgba(255,255,255,0.4)', fontSize: 12, fontWeight: 600,
+                }}
+              >
+                Back to Roster
+              </button>
+            </div>
+          )}
         </div>
       </div>
     );
@@ -306,21 +326,22 @@ export default function COSOverview() {
 
   return (
     <div className="min-h-full bg-[#07080A]">
-      {/* Back to roster */}
-      <div className="px-5 pt-3 pb-0">
-        <button
-          onClick={() => navigate('/catalog/app/roster')}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold transition-all"
-          style={{
-            background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)',
-            color: 'rgba(255,255,255,0.45)',
-          }}
-          onMouseEnter={e => { const b = e.currentTarget; b.style.background = 'rgba(255,255,255,0.07)'; b.style.color = 'rgba(255,255,255,0.7)'; }}
-          onMouseLeave={e => { const b = e.currentTarget; b.style.background = 'rgba(255,255,255,0.04)'; b.style.color = 'rgba(255,255,255,0.45)'; }}
-        >
-          <ArrowLeft className="w-3 h-3" /> Back to Catalog Clients
-        </button>
-      </div>
+      {isAdmin && (
+        <div className="px-5 pt-3 pb-0">
+          <button
+            onClick={() => navigate('/catalog/app/roster')}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold transition-all"
+            style={{
+              background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)',
+              color: 'rgba(255,255,255,0.45)',
+            }}
+            onMouseEnter={e => { const b = e.currentTarget; b.style.background = 'rgba(255,255,255,0.07)'; b.style.color = 'rgba(255,255,255,0.7)'; }}
+            onMouseLeave={e => { const b = e.currentTarget; b.style.background = 'rgba(255,255,255,0.04)'; b.style.color = 'rgba(255,255,255,0.45)'; }}
+          >
+            <ArrowLeft className="w-3 h-3" /> Back to Catalog Clients
+          </button>
+        </div>
+      )}
 
       <ClientContextBanner />
 

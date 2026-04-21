@@ -9,7 +9,7 @@ import {
 import CatalogPageHeader from './CatalogPageHeader';
 import { useCatalogClient } from '../../context/CatalogClientContext';
 import {
-  isClientDropped, dropClient, getDroppedClients, type CatalogDropRecord,
+  isClientDropped, dropClient, initCatalogDropState,
 } from '../../data/catalogDropService';
 
 // ── Static client data ────────────────────────────────────────────────────────
@@ -494,6 +494,8 @@ export default function COSRoster() {
   const [dropTarget, setDropTarget] = useState<CatalogClientRow | null>(null);
   const [dropVersion, setDropVersion] = useState(0);
 
+  useEffect(() => { initCatalogDropState().then(() => setDropVersion(v => v + 1)); }, []);
+
   const isDropped = useCallback((id: string) => isClientDropped(id), [dropVersion]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const droppedCount = ALL_CATALOG_CLIENTS.filter(c => isClientDropped(c.id)).length;
@@ -519,9 +521,14 @@ export default function COSRoster() {
     setDropTarget(client);
   }
 
-  function confirmDrop(reason: string) {
+  async function confirmDrop(reason: string) {
     if (!dropTarget) return;
-    dropClient(dropTarget.id, dropTarget.name, reason);
+    await dropClient({
+      clientId: dropTarget.id,
+      clientName: dropTarget.name,
+      initiatedBy: 'Admin',
+      notes: reason || 'Dropped via admin roster',
+    });
     setDropTarget(null);
     setDropVersion(v => v + 1);
   }

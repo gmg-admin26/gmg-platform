@@ -9,6 +9,7 @@ import {
 import {
   fetchDroppedQueue,
   completeDropArtist,
+  reinstateArtist,
   setLocalLifecycleState,
   getLocalLifecycleState,
   type ArtistLifecycleEvent,
@@ -73,10 +74,12 @@ interface RowActionMenuProps {
   initiatedBy: string;
   onViewArtist: () => void;
   onCompleteDrop: () => void;
+  onReinstate: () => void;
   completing: boolean;
+  reinstatingId: boolean;
 }
 
-function RowActionMenu({ artistId, state, onViewArtist, onCompleteDrop, completing }: RowActionMenuProps) {
+function RowActionMenu({ artistId, state, onViewArtist, onCompleteDrop, onReinstate, completing, reinstatingId }: RowActionMenuProps) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -130,6 +133,18 @@ function RowActionMenu({ artistId, state, onViewArtist, onCompleteDrop, completi
                 </button>
               </>
             )}
+
+            <div style={{ height: 1, background: 'rgba(255,255,255,0.06)' }} />
+            <button
+              onClick={() => { setOpen(false); onReinstate(); }}
+              disabled={reinstatingId}
+              style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '9px 14px', background: 'none', border: 'none', cursor: reinstatingId ? 'wait' : 'pointer', color: reinstatingId ? 'rgba(255,255,255,0.25)' : '#06B6D4', fontSize: 11, fontWeight: 600, transition: 'background 0.1s' }}
+              onMouseEnter={e => { if (!reinstatingId) { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(6,182,212,0.06)'; } }}
+              onMouseLeave={e => (e.currentTarget.style.background = 'none')}
+            >
+              {reinstatingId ? <Loader size={11} style={{ animation: 'spin 1s linear infinite' }} /> : <RefreshCw size={11} color="#06B6D4" />}
+              Reinstate Artist
+            </button>
           </div>
         </>
       )}
@@ -147,6 +162,7 @@ export default function DroppedQueue() {
   const [rows, setRows] = useState<QueueRowData[]>([]);
   const [loading, setLoading] = useState(true);
   const [completingIds, setCompletingIds] = useState<Set<string>>(new Set());
+  const [reinstatingIds, setReinstatingIds] = useState<Set<string>>(new Set());
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -187,6 +203,14 @@ export default function DroppedQueue() {
     setLocalLifecycleState(artistId, 'dropped_complete');
     setRows(prev => prev.map(r => r.artist_id === artistId ? { ...r, state: 'dropped_complete' } : r));
     setCompletingIds(prev => { const s = new Set(prev); s.delete(artistId); return s; });
+  }, [roleState.user?.email]);
+
+  const handleReinstate = useCallback(async (artistId: string) => {
+    setReinstatingIds(prev => new Set([...prev, artistId]));
+    const initiatedBy = roleState.user?.email ?? 'admin@gmg.ai';
+    await reinstateArtist(artistId, initiatedBy);
+    setRows(prev => prev.filter(r => r.artist_id !== artistId));
+    setReinstatingIds(prev => { const s = new Set(prev); s.delete(artistId); return s; });
   }, [roleState.user?.email]);
 
   const pendingRows   = rows.filter(r => r.state === 'dropped_pending');
@@ -385,7 +409,9 @@ export default function DroppedQueue() {
                     initiatedBy={row.initiated_by}
                     onViewArtist={() => navigate(`/dashboard/artist-os/roster/${row.artist_id}`)}
                     onCompleteDrop={() => handleCompleteDrop(row.artist_id)}
+                    onReinstate={() => handleReinstate(row.artist_id)}
                     completing={completing}
+                    reinstatingId={reinstatingIds.has(row.artist_id)}
                   />
                 </div>
               </div>

@@ -62,7 +62,21 @@ export const CATALOG_OS_USERS: CatalogOSUser[] = [
     password: 'bassnectar123',
     role: 'catalog_owner',
     displayName: 'Bassnectar Catalog',
-    clientId: 'bassnectar',
+    clientId: 'a1000000-0000-0000-0000-000000000001',
+  },
+  {
+    email: 'client@santigold.com',
+    password: 'santigold123',
+    role: 'catalog_owner',
+    displayName: 'Santigold Catalog',
+    clientId: 'a2000000-0000-0000-0000-000000000002',
+  },
+  {
+    email: 'client@artist03.com',
+    password: 'artist03123',
+    role: 'catalog_owner',
+    displayName: 'Placeholder Artist 03',
+    clientId: 'a3000000-0000-0000-0000-000000000003',
   },
 ];
 

@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useCallback, type ReactNode } from 'react';
-import { ROLE_USERS, CATALOG_OS_USERS, SYSTEM_ACCESS, type SystemRole } from './roles';
+import { ROLE_USERS, CATALOG_OS_USERS, SYSTEM_ACCESS, type SystemRole, type CatalogOSUser } from './roles';
 
 export const AOS_KEY_AUTH = 'artistos_authenticated';
 export const AOS_KEY_USER = 'artistos_user';
@@ -10,6 +10,7 @@ export const RS_KEY_USER = 'rocksteady_user';
 export const COS_KEY_AUTH = 'catalogos_authenticated';
 export const COS_KEY_USER = 'catalogos_user';
 export const COS_KEY_ROLE = 'catalogos_role';
+export const COS_KEY_CLIENT_ID = 'catalogos_client_id';
 
 interface AuthState {
   authenticated: boolean;
@@ -18,6 +19,7 @@ interface AuthState {
 
 interface CatalogOSAuthState extends AuthState {
   role: string;
+  clientId: string;
 }
 
 interface AuthContextValue {
@@ -48,10 +50,6 @@ function isValidRocksteady(email: string, password: string): boolean {
     || ROLE_USERS.some(u => u.email === email && u.password === password);
 }
 
-function isValidCatalogOS(email: string, password: string): string | null {
-  const match = CATALOG_OS_USERS.find(u => u.email === email && u.password === password);
-  return match ? match.role : null;
-}
 
 function persist(authKey: string, userKey: string, email: string) {
   localStorage.setItem(authKey, 'true');
@@ -81,9 +79,10 @@ function loadCatalogOS(): CatalogOSAuthState {
     const flag = localStorage.getItem(COS_KEY_AUTH) || sessionStorage.getItem(COS_KEY_AUTH);
     const user = localStorage.getItem(COS_KEY_USER) || sessionStorage.getItem(COS_KEY_USER);
     const role = localStorage.getItem(COS_KEY_ROLE) || sessionStorage.getItem(COS_KEY_ROLE);
-    if (flag === 'true' && user && role) return { authenticated: true, email: user, role };
+    const clientId = localStorage.getItem(COS_KEY_CLIENT_ID) || sessionStorage.getItem(COS_KEY_CLIENT_ID) || '';
+    if (flag === 'true' && user && role) return { authenticated: true, email: user, role, clientId };
   } catch {}
-  return { authenticated: false, email: '', role: '' };
+  return { authenticated: false, email: '', role: '', clientId: '' };
 }
 
 export function clearRocksteadySession() {
@@ -99,6 +98,8 @@ export function clearCatalogOSSession() {
   wipe(COS_KEY_AUTH, COS_KEY_USER);
   localStorage.removeItem(COS_KEY_ROLE);
   sessionStorage.removeItem(COS_KEY_ROLE);
+  localStorage.removeItem(COS_KEY_CLIENT_ID);
+  sessionStorage.removeItem(COS_KEY_CLIENT_ID);
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -130,12 +131,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const loginCatalogOS = useCallback((email: string, password: string): boolean => {
-    const role = isValidCatalogOS(email, password);
-    if (!role) return false;
+    const match = CATALOG_OS_USERS.find(u => u.email === email && u.password === password);
+    if (!match) return false;
+    const role = match.role;
+    const clientId = match.clientId ?? '';
     persist(COS_KEY_AUTH, COS_KEY_USER, email);
     localStorage.setItem(COS_KEY_ROLE, role);
     sessionStorage.setItem(COS_KEY_ROLE, role);
-    setCatalogOSAuth({ authenticated: true, email, role });
+    localStorage.setItem(COS_KEY_CLIENT_ID, clientId);
+    sessionStorage.setItem(COS_KEY_CLIENT_ID, clientId);
+    setCatalogOSAuth({ authenticated: true, email, role, clientId });
     return true;
   }, []);
 
@@ -151,7 +156,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logoutCatalogOS = useCallback(() => {
     clearCatalogOSSession();
-    setCatalogOSAuth({ authenticated: false, email: '', role: '' });
+    setCatalogOSAuth({ authenticated: false, email: '', role: '', clientId: '' });
   }, []);
 
   const clearSession = useCallback(() => {
@@ -160,7 +165,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     clearCatalogOSSession();
     setAuth({ authenticated: false, email: '' });
     setRocksteadyAuth({ authenticated: false, email: '' });
-    setCatalogOSAuth({ authenticated: false, email: '', role: '' });
+    setCatalogOSAuth({ authenticated: false, email: '', role: '', clientId: '' });
   }, []);
 
   return (

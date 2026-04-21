@@ -124,6 +124,23 @@ export function getActiveArtists<T extends { id: string }>(artists: T[]): T[] {
   return artists.filter(a => !isArtistDropped(a.id));
 }
 
+export async function reinstateArtist(artistId: string, initiatedBy: string): Promise<{ error: string | null }> {
+  setLocalLifecycleState(artistId, 'active');
+  try {
+    const { error } = await supabase.from('artist_lifecycle_events').insert({
+      artist_id: artistId,
+      artist_name: '',
+      state: 'active',
+      initiated_by: initiatedBy,
+      notes: 'Reinstated from Dropped Queue',
+    });
+    if (error) return { error: error.message };
+    return { error: null };
+  } catch (e) {
+    return { error: String(e) };
+  }
+}
+
 export function restoreArtist(artistId: string): void {
   setLocalLifecycleState(artistId, 'active');
 }

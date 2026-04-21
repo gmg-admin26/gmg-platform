@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   UserMinus, Clock, CheckCircle, ShieldOff, ArrowUpRight,
@@ -7,7 +7,10 @@ import {
 import CatalogPageHeader from './CatalogPageHeader';
 import { useCatalogClient } from '../../context/CatalogClientContext';
 import {
-  getDroppedClients, reinstateClient, type CatalogDropRecord,
+  fetchCatalogDroppedQueue,
+  reinstateClient,
+  initCatalogDropState,
+  type CatalogLifecycleEvent,
 } from '../../data/catalogDropService';
 import { ALL_CATALOG_CLIENTS, type CatalogClientRow } from './COSRoster';
 
@@ -18,8 +21,6 @@ function fmtDate(iso: string): string {
     return iso;
   }
 }
-
-// ── Exit progress steps ───────────────────────────────────────────────────────
 
 function ExitSteps() {
   const steps = [
@@ -53,26 +54,22 @@ function ExitSteps() {
   );
 }
 
-// ── Dropped client card ───────────────────────────────────────────────────────
-
 function DroppedCard({
   record,
   client,
   onViewProfile,
   onReinstate,
 }: {
-  record: CatalogDropRecord;
+  record: CatalogLifecycleEvent;
   client: CatalogClientRow | undefined;
   onViewProfile: (id: string) => void;
   onReinstate: (id: string, name: string) => void;
 }) {
   const [reinstating, setReinstating] = useState(false);
-  const accent = client?.accent ?? '#EF4444';
 
   async function handleReinstate() {
     setReinstating(true);
-    await new Promise(r => setTimeout(r, 600));
-    onReinstate(record.clientId, record.clientName);
+    onReinstate(record.client_id, record.client_name);
     setReinstating(false);
   }
 
@@ -83,11 +80,9 @@ function DroppedCard({
       borderRadius: 14,
       overflow: 'hidden',
     }}>
-      {/* Header stripe */}
       <div style={{ height: 2, background: 'linear-gradient(90deg,transparent,rgba(239,68,68,0.4),transparent)' }} />
 
       <div style={{ padding: '16px 18px' }}>
-        {/* Top row */}
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, marginBottom: 12 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <div style={{ width: 40, height: 40, borderRadius: 10, background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
@@ -95,7 +90,7 @@ function DroppedCard({
             </div>
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-                <span style={{ fontSize: 14, fontWeight: 800, color: 'rgba(255,255,255,0.75)' }}>{record.clientName}</span>
+                <span style={{ fontSize: 14, fontWeight: 800, color: 'rgba(255,255,255,0.75)' }}>{record.client_name}</span>
                 <span style={{ fontFamily: 'monospace', fontSize: 7.5, fontWeight: 700, textTransform: 'uppercase' as const, letterSpacing: '0.07em', padding: '2px 5px', borderRadius: 3, color: '#EF4444', background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.22)' }}>DROPPED</span>
               </div>
               {client && (
@@ -108,7 +103,7 @@ function DroppedCard({
 
           <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
             <button
-              onClick={() => onViewProfile(record.clientId)}
+              onClick={() => onViewProfile(record.client_id)}
               style={{
                 display: 'flex', alignItems: 'center', gap: 5,
                 padding: '6px 11px', borderRadius: 8, cursor: 'pointer',
@@ -130,7 +125,7 @@ function DroppedCard({
               }}
             >
               {reinstating
-                ? <><RefreshCw size={11} style={{ animation: 'spin 1s linear infinite' }} /> Reinstating…</>
+                ? <><RefreshCw size={11} style={{ animation: 'spin 1s linear infinite' }} /> Reinstating...</>
                 : <><RefreshCw size={11} /> Reinstate</>
               }
               <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
@@ -138,15 +133,14 @@ function DroppedCard({
           </div>
         </div>
 
-        {/* Meta row */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 12, flexWrap: 'wrap' as const }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 10, color: 'rgba(255,255,255,0.3)' }}>
             <Clock size={10} />
-            <span>Dropped {fmtDate(record.droppedAt)}</span>
+            <span>Dropped {fmtDate(record.initiated_at)}</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 10, color: 'rgba(255,255,255,0.3)' }}>
             <ShieldOff size={10} />
-            <span>By {record.droppedBy}</span>
+            <span>By {record.initiated_by}</span>
           </div>
           {client && (
             <>
@@ -162,44 +156,48 @@ function DroppedCard({
           )}
         </div>
 
-        {/* Reason */}
-        {record.reason && (
+        {record.notes && (
           <div style={{ marginBottom: 12, padding: '8px 10px', borderRadius: 8, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)' }}>
             <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', fontFamily: 'monospace' }}>REASON: </span>
-            <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)' }}>{record.reason}</span>
+            <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)' }}>{record.notes}</span>
           </div>
         )}
 
-        {/* Exit progress */}
         <ExitSteps />
       </div>
     </div>
   );
 }
 
-// ── Main ──────────────────────────────────────────────────────────────────────
-
 export default function COSDroppedQueue() {
   const navigate = useNavigate();
   const { activeClient, switchClient } = useCatalogClient();
-  const accent = activeClient?.accent_color ?? '#10B981';
 
-  const [version, setVersion] = useState(0);
+  const [dropped, setDropped] = useState<CatalogLifecycleEvent[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const dropped: CatalogDropRecord[] = getDroppedClients();
+  const load = useCallback(async () => {
+    setLoading(true);
+    await initCatalogDropState();
+    const items = await fetchCatalogDroppedQueue();
+    setDropped(items);
+    setLoading(false);
+  }, []);
+
+  useEffect(() => { load(); }, [load]);
 
   function handleViewProfile(clientId: string) {
     switchClient(clientId);
     navigate('/catalog/app/overview');
   }
 
-  const handleReinstate = useCallback((clientId: string, _name: string) => {
-    reinstateClient(clientId);
-    setVersion(v => v + 1);
+  const handleReinstate = useCallback(async (clientId: string, _name: string) => {
+    await reinstateClient(clientId, 'Admin');
+    setDropped(prev => prev.filter(r => r.client_id !== clientId));
   }, []);
 
   return (
-    <div className="min-h-screen bg-[#07080A]" key={version}>
+    <div className="min-h-screen bg-[#07080A]">
       <CatalogPageHeader
         icon={UserMinus}
         title="Dropped Queue"
@@ -209,7 +207,12 @@ export default function COSDroppedQueue() {
       />
 
       <div style={{ padding: '20px 18px' }}>
-        {dropped.length === 0 ? (
+        {loading ? (
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '60px 18px', textAlign: 'center' as const }}>
+            <RefreshCw size={20} color="rgba(255,255,255,0.2)" style={{ animation: 'spin 1s linear infinite', marginBottom: 10 }} />
+            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.25)' }}>Loading dropped queue...</div>
+          </div>
+        ) : dropped.length === 0 ? (
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '60px 18px', textAlign: 'center' as const }}>
             <div style={{ width: 48, height: 48, borderRadius: 14, background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 14 }}>
               <CheckCircle size={20} color="#10B981" />
@@ -229,18 +232,26 @@ export default function COSDroppedQueue() {
               <div style={{ fontSize: 11, fontFamily: 'monospace', color: 'rgba(255,255,255,0.25)' }}>
                 {dropped.length} dropped client{dropped.length !== 1 ? 's' : ''}
               </div>
-              <button
-                onClick={() => navigate('/catalog/app/roster')}
-                style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '5px 10px', borderRadius: 7, cursor: 'pointer', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.4)', fontSize: 10, fontWeight: 600 }}
-              >
-                <ArrowUpRight size={10} /> Back to Roster
-              </button>
+              <div style={{ display: 'flex', gap: 6 }}>
+                <button
+                  onClick={load}
+                  style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '5px 10px', borderRadius: 7, cursor: 'pointer', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.4)', fontSize: 10, fontWeight: 600 }}
+                >
+                  <RefreshCw size={10} /> Refresh
+                </button>
+                <button
+                  onClick={() => navigate('/catalog/app/roster')}
+                  style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '5px 10px', borderRadius: 7, cursor: 'pointer', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.4)', fontSize: 10, fontWeight: 600 }}
+                >
+                  <ArrowUpRight size={10} /> Back to Roster
+                </button>
+              </div>
             </div>
             {dropped.map(record => {
-              const client = ALL_CATALOG_CLIENTS.find(c => c.id === record.clientId);
+              const client = ALL_CATALOG_CLIENTS.find(c => c.id === record.client_id);
               return (
                 <DroppedCard
-                  key={record.clientId}
+                  key={record.client_id}
                   record={record}
                   client={client}
                   onViewProfile={handleViewProfile}
