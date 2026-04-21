@@ -486,7 +486,7 @@ const COLS = ['Client', 'Status', 'Health', 'Priority', 'Catalog Value', 'Mo. Re
 
 export default function COSRoster() {
   const navigate = useNavigate();
-  const { activeClient, switchClient } = useCatalogClient();
+  const { activeClient } = useCatalogClient();
   const accent = activeClient?.accent_color ?? '#10B981';
 
   const [filter, setFilter] = useState<FilterKey>('Active');
@@ -513,8 +513,7 @@ export default function COSRoster() {
   });
 
   function handleOpen(clientId: string) {
-    switchClient(clientId);
-    navigate('/catalog/app/overview');
+    navigate(`/catalog/app/client/${clientId}`);
   }
 
   function handleDrop(client: CatalogClientRow) {

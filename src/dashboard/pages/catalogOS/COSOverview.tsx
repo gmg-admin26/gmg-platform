@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Navigate } from 'react-router-dom';
 import { Library, TrendingUp, TrendingDown, AlertCircle, Clock, ChevronRight, Zap, DollarSign, FileText, CheckSquare, Building2, Users, Mic2, MapPin, Mail, Send, MessageSquare, Bot, User, Flag, ArrowUpRight, Calendar, Megaphone, ShoppingBag, Music, Scale, Star, Target, Activity, RefreshCw, ExternalLink, Video, Globe, BarChart2, Heart, Shield, Rocket, Database, Search, BarChart, PieChart, Headphones, Settings, Lock, UserMinus, ArrowLeft } from 'lucide-react';
 import { isClientDropped, fetchLifecycleEventForClient, initCatalogDropState, type CatalogLifecycleEvent } from '../../data/catalogDropService';
 import { useAuth } from '../../../auth/AuthContext';
@@ -166,7 +166,7 @@ function ClientContextBanner() {
   );
 }
 
-export default function COSOverview() {
+export default function COSOverview({ forceClientId }: { forceClientId?: string } = {}) {
   const [now, setNow] = useState(new Date());
   const { openSubmit } = useTasks();
   const navigate = useNavigate();
@@ -174,11 +174,13 @@ export default function COSOverview() {
   const { catalogOSAuth } = useAuth();
   const isAdmin = catalogOSAuth.role === 'catalog_admin' || !catalogOSAuth.clientId;
 
+  // When a specific client is requested via URL param, switch to it
+  const targetId = forceClientId ?? (!isAdmin ? catalogOSAuth.clientId : undefined);
   useEffect(() => {
-    if (!isAdmin && catalogOSAuth.clientId && activeClient?.id !== catalogOSAuth.clientId) {
-      switchClient(catalogOSAuth.clientId);
+    if (targetId && activeClient?.id !== targetId) {
+      switchClient(targetId);
     }
-  }, [isAdmin, catalogOSAuth.clientId, activeClient?.id, switchClient]);
+  }, [targetId, activeClient?.id, switchClient]);
 
   useEffect(() => {
     const t = setInterval(() => setNow(new Date()), 1000);
@@ -194,6 +196,9 @@ export default function COSOverview() {
       setDropRecord(null);
     }
   }, [activeClient?.id]);
+
+  // Admin guard — all hooks above this line
+  if (isAdmin) return <Navigate to="/catalog/app/roster" replace />;
 
   const profile = getClientProfile(activeClient?.id);
   const { META, METRICS, METRICS_LIST, CURRENT_STATUS, ENTITIES, WEEKLY_SNAPSHOT, TASKS, EXPECTED_ANNUAL_OUTCOMES, AI_RECOMMENDATIONS, ACCOUNTING, COMMS } = profile;

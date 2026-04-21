@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useParams } from 'react-router-dom';
 import { AuthProvider } from './auth/AuthContext';
 import { IndustryOSProvider } from './auth/IndustryOSContext';
 import { RoleProvider } from './auth/RoleContext';
@@ -140,7 +140,14 @@ function CatalogOSIndexDispatch() {
     try { return localStorage.getItem('catalogos_client_id') || sessionStorage.getItem('catalogos_client_id') || ''; } catch { return ''; }
   })();
   if (cosRole === 'catalog_admin' || !cosClientId) return <COSRoster />;
-  return <COSOverview />;
+  return <Navigate to={`/catalog/app/client/${cosClientId}`} replace />;
+}
+
+// Renders COSOverview for a specific client identified by URL param.
+// Must be rendered inside CatalogOSLayout (so CatalogClientContext is available).
+function COSClientRoute() {
+  const { clientId } = useParams<{ clientId: string }>();
+  return <COSOverview forceClientId={clientId} />;
 }
 
 function PublicLayout() {
@@ -218,6 +225,7 @@ function App() {
             <Route index element={<CatalogOSIndexDispatch />} />
             <Route path="roster"        element={<COSRoster />} />
             <Route path="overview"      element={<COSOverview />} />
+            <Route path="client/:clientId" element={<COSClientRoute />} />
             <Route path="dropped-queue" element={<COSDroppedQueue />} />
             <Route path="value"     element={<COSValue />} />
             <Route path="assets"    element={<COSAssets />} />
