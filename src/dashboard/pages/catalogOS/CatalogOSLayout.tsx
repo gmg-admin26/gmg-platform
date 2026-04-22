@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { NavLink, Outlet, useLocation } from 'react-router-dom';
+import { NavLink, Outlet, useLocation, useParams } from 'react-router-dom';
 import {
   Library, BarChart2, DollarSign, CheckSquare, Calendar, Megaphone,
   Users, Heart, Mic2, TrendingUp, ShoppingBag, FileText, Video, Globe,
@@ -39,6 +39,7 @@ const CLIENT_GROUP_A: NavItemDef[] = [
   { icon: Megaphone,   label: 'Campaigns',          slug: 'campaigns',   end: false },
   { icon: Heart,       label: 'Fan Intelligence',   slug: 'fans',        end: false },
   { icon: Users,       label: 'Fan OS',             slug: 'fan-os',      end: false },
+  { icon: Rocket,      label: 'Futures',            slug: 'futures',     end: false },
   { icon: Calendar,    label: '12-Month Plan',      slug: 'timeline',    end: false },
   { icon: Video,       label: 'Reports',            slug: 'meetings',    end: false },
   { icon: BarChart2,   label: 'Brand Health',       slug: 'brand',       end: false },
@@ -220,10 +221,12 @@ function AdminSidebar() {
 // ── Client sidebar — lives inside CatalogClientProvider ───────────────────────
 
 function ClientSidebar() {
+  const { clientId } = useParams<{ clientId: string }>();
   const { activeClient } = useCatalogClient();
   const { catalogOSAuth, logoutCatalogOS } = useAuth();
   const ACCENT = activeClient?.accent_color ?? '#10B981';
-  const BASE = '/catalog/app';
+  // All nav links are relative to the current client: /catalog/app/client/:clientId/<slug>
+  const BASE = `/catalog/app/client/${clientId}`;
 
   function NavItem({ item }: { item: NavItemDef }) {
     const path = `${BASE}/${item.slug}`;
@@ -257,9 +260,13 @@ function ClientSidebar() {
             CATALOG OS
           </span>
         </div>
+        {activeClient && (
+          <div className="flex items-center gap-1.5 mt-1.5 min-w-0">
+            <div className="w-2 h-2 rounded-full shrink-0" style={{ background: ACCENT }} />
+            <span className="text-[9px] font-mono text-white/40 truncate">{activeClient.name ?? clientId}</span>
+          </div>
+        )}
       </div>
-
-      <CatalogClientSwitcher />
 
       <nav className="flex-1 py-2 overflow-y-auto">
         <div className="px-4 pt-2 pb-1">
@@ -275,7 +282,15 @@ function ClientSidebar() {
         {CLIENT_GROUP_B.map(item => <NavItem key={item.slug} item={item} />)}
       </nav>
 
-      <div className="px-4 py-3 border-t border-white/[0.05] shrink-0">
+      <div className="px-4 py-3 border-t border-white/[0.05] shrink-0 space-y-1">
+        {catalogOSAuth.role === 'catalog_admin' && (
+          <NavLink to="/catalog/app/roster"
+            className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded text-[11px] text-white/30 hover:text-white/65 hover:bg-white/[0.04] transition-all"
+          >
+            <Users className="w-3 h-3 shrink-0" />
+            <span>Catalog Clients</span>
+          </NavLink>
+        )}
         {catalogOSAuth.authenticated && (
           <button onClick={logoutCatalogOS}
             className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded text-[11px] text-white/30 hover:text-white/65 hover:bg-white/[0.04] transition-all group"

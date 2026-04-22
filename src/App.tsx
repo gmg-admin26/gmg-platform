@@ -281,6 +281,7 @@ function App() {
             <Route path="workers"   element={<COSWorkers />} />
             <Route path="meetings"  element={<COSMeetings />} />
             <Route path="entities"  element={<COSEntities />} />
+            <Route path="futures"   element={<COSFutures />} />
           </Route>
 
           {/* ── Catalog OS: Team shell — CatalogClientProvider for team view ── */}
