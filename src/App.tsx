@@ -109,7 +109,7 @@ import ArtistOS from './dashboard/pages/ArtistOS';
 import ArtistOSOverview from './dashboard/pages/ArtistOSOverview';
 import ArtistOSUpdates from './dashboard/pages/ArtistOSUpdates';
 import ArtistOSRequests from './dashboard/pages/ArtistOSRequests';
-import CatalogOSLayout from './dashboard/pages/catalogOS/CatalogOSLayout';
+import { CatalogAdminLayout, CatalogClientLayout } from './dashboard/pages/catalogOS/CatalogOSLayout';
 import COSOverview from './dashboard/pages/catalogOS/COSOverview';
 import COSValue from './dashboard/pages/catalogOS/COSValue';
 import COSRevenue from './dashboard/pages/catalogOS/COSRevenue';
@@ -250,14 +250,21 @@ function App() {
           <Route path="/login/catalog-os" element={<CatalogOSLogin />} />
           <Route path="/catalog/login" element={<CatalogOSLogin />} />
           <Route path="/catalog-os/login" element={<CatalogOSLogin />} />
-          <Route path="/catalog/app" element={<CatalogOSProtectedRoute><CatalogOSLayout /></CatalogOSProtectedRoute>}>
-            <Route index element={<CatalogOSIndexDispatch />} />
-            <Route path="admin"            element={<COSAdminView />} />
-            <Route path="roster"           element={<COSRoster />} />
-            <Route path="overview"         element={<COSOverview />} />
-            <Route path="client/:clientId" element={<COSClientRoute />} />
-            <Route path="team/:clientId"   element={<COSTeamRoute />} />
+          {/* ── Catalog OS: Admin shell — no CatalogClientProvider ── */}
+          <Route path="/catalog/app" element={<CatalogOSProtectedRoute><CatalogAdminLayout /></CatalogOSProtectedRoute>}>
+            <Route index          element={<CatalogOSIndexDispatch />} />
+            <Route path="admin"         element={<COSAdminView />} />
+            <Route path="roster"        element={<COSRoster />} />
             <Route path="dropped-queue" element={<COSDroppedQueue />} />
+            <Route path="futures"       element={<COSFutures />} />
+            <Route path="tasks"         element={<COSTasks />} />
+            <Route path="progress"      element={<COSTeamProgress />} />
+          </Route>
+
+          {/* ── Catalog OS: Client shell — CatalogClientProvider per client ── */}
+          <Route path="/catalog/app/client/:clientId" element={<CatalogOSProtectedRoute><CatalogClientLayout /></CatalogOSProtectedRoute>}>
+            <Route index          element={<COSClientRoute />} />
+            <Route path="overview"  element={<COSClientRoute />} />
             <Route path="value"     element={<COSValue />} />
             <Route path="assets"    element={<COSAssets />} />
             <Route path="revenue"   element={<COSRevenue />} />
@@ -274,7 +281,11 @@ function App() {
             <Route path="workers"   element={<COSWorkers />} />
             <Route path="meetings"  element={<COSMeetings />} />
             <Route path="entities"  element={<COSEntities />} />
-            <Route path="futures"   element={<COSFutures />} />
+          </Route>
+
+          {/* ── Catalog OS: Team shell — CatalogClientProvider for team view ── */}
+          <Route path="/catalog/app/team/:clientId" element={<CatalogOSProtectedRoute><CatalogClientLayout /></CatalogOSProtectedRoute>}>
+            <Route index element={<COSTeamRoute />} />
           </Route>
           <Route path="/rocksteady/login" element={<Navigate to="/login/rocksteady" replace />} />
           <Route path="/dashboard" element={<DashboardLayout />}>

@@ -37,16 +37,13 @@ export function CatalogClientProvider({ children }: { children: ReactNode }) {
       setLoading(true);
       const all = await fetchAllClients();
       setClients(all);
-      const authRole = localStorage.getItem('catalogos_role') || sessionStorage.getItem('catalogos_role') || '';
-      const authClientId = localStorage.getItem('catalogos_client_id') || sessionStorage.getItem('catalogos_client_id') || '';
-      // Admins have no per-client context — skip auto-loading any active client
-      if (authRole !== 'catalog_admin') {
-        if (all.length > 0) {
-          const saved = localStorage.getItem(STORAGE_KEY);
-          const preferredId = authClientId || saved;
-          const match = preferredId ? all.find(c => c.id === preferredId) : null;
-          if (match) await loadClient(match.id);
-        }
+      if (all.length > 0) {
+        const authClientId = localStorage.getItem('catalogos_client_id') || sessionStorage.getItem('catalogos_client_id') || '';
+        const saved = localStorage.getItem(STORAGE_KEY);
+        const preferredId = authClientId || saved;
+        const match = preferredId ? all.find(c => c.id === preferredId) : null;
+        const target = match ?? all[0];
+        await loadClient(target.id);
       }
       setLoading(false);
     })();
