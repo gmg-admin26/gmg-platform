@@ -172,9 +172,11 @@ export default function COSOverview({ forceClientId }: { forceClientId?: string 
   const navigate = useNavigate();
   const { activeClient, switchClient } = useCatalogClient();
   const { catalogOSAuth } = useAuth();
-  const isAdmin = catalogOSAuth.role === 'catalog_admin' || !catalogOSAuth.clientId;
+  // When arriving via a direct /client/:id route, forceClientId is authoritative.
+  // Never treat that as admin — the route param IS the client selection.
+  const isAdmin = !forceClientId && (catalogOSAuth.role === 'catalog_admin' || !catalogOSAuth.clientId);
 
-  // When a specific client is requested via URL param, switch to it
+  // Resolve the target client ID: URL param wins over auth clientId
   const targetId = forceClientId ?? (!isAdmin ? catalogOSAuth.clientId : undefined);
   useEffect(() => {
     if (targetId && activeClient?.id !== targetId) {
@@ -209,7 +211,7 @@ export default function COSOverview({ forceClientId }: { forceClientId?: string 
   const profileId = forceClientId ?? activeClient?.id;
   const profile = getClientProfile(profileId);
   const { META, METRICS, METRICS_LIST, CURRENT_STATUS, ENTITIES, WEEKLY_SNAPSHOT, TASKS, EXPECTED_ANNUAL_OUTCOMES, AI_RECOMMENDATIONS, ACCOUNTING, COMMS } = profile;
-  const ACCENT = activeClient?.accent_color ?? META.status_color;
+  const ACCENT = (forceClientId ? null : activeClient?.accent_color) ?? META.status_color;
 
   const openTasks = TASKS.filter(t => t.status !== 'completed');
   const flaggedTasks = TASKS.filter(t => t.flagged);
