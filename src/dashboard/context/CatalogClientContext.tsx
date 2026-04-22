@@ -37,17 +37,9 @@ export function CatalogClientProvider({ children }: { children: ReactNode }) {
       setLoading(true);
       const all = await fetchAllClients();
       setClients(all);
-      if (all.length > 0) {
-        const authClientId = localStorage.getItem('catalogos_client_id') || sessionStorage.getItem('catalogos_client_id') || '';
-        const saved = localStorage.getItem(STORAGE_KEY);
-        const preferredId = authClientId || saved;
-        const match = preferredId ? all.find(c => c.id === preferredId) : null;
-        const target = match ?? all[0];
-        await loadClient(target.id);
-      }
       setLoading(false);
     })();
-  }, [loadClient]);
+  }, []);
 
   const switchClient = useCallback(async (id: string) => {
     setLoading(true);
