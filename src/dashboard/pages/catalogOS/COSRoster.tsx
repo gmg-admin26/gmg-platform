@@ -512,8 +512,16 @@ export default function COSRoster() {
     return true;
   });
 
+  // Map client UUIDs to explicit slug routes so each row opens its own unique page
+  const CLIENT_SLUGS: Record<string, string> = {
+    'a1000000-0000-0000-0000-000000000001': 'bassnectar',
+    'a2000000-0000-0000-0000-000000000002': 'santigold',
+    'a3000000-0000-0000-0000-000000000003': 'virgin-catalog-artist',
+  };
+
   function handleOpen(clientId: string) {
-    navigate(`/catalog/app/client/${clientId}`);
+    const slug = CLIENT_SLUGS[clientId] ?? clientId;
+    navigate(`/catalog/app/client/${slug}`);
   }
 
   function handleDrop(client: CatalogClientRow) {

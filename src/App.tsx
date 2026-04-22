@@ -159,10 +159,18 @@ function CatalogOSIndexDispatch() {
   return <Navigate to={`/catalog/app/client/${cosClientId}`} replace />;
 }
 
-// Full client view — identified by URL clientId param
+// Slug → UUID map for friendly client URLs
+const CLIENT_SLUG_MAP: Record<string, string> = {
+  'bassnectar':            'a1000000-0000-0000-0000-000000000001',
+  'santigold':             'a2000000-0000-0000-0000-000000000002',
+  'virgin-catalog-artist': 'a3000000-0000-0000-0000-000000000003',
+};
+
+// Full client view — resolves slug or UUID from URL param
 function COSClientRoute() {
   const { clientId } = useParams<{ clientId: string }>();
-  return <COSOverview forceClientId={clientId} />;
+  const resolvedId = clientId ? (CLIENT_SLUG_MAP[clientId] ?? clientId) : undefined;
+  return <COSOverview forceClientId={resolvedId} />;
 }
 
 // Restricted team view — identified by URL clientId param

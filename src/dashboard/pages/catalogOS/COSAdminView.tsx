@@ -5,10 +5,8 @@ import {
   Library, UserMinus, ArrowUpRight, BarChart2, Zap, Music,
   Calendar, Target, Activity, Flag,
 } from 'lucide-react';
-import { useCatalogClient } from '../../context/CatalogClientContext';
 import { ALL_CATALOG_CLIENTS } from './COSRoster';
 import { isClientDropped } from '../../data/catalogDropService';
-import { getClientProfile } from '../../data/catalogClientProfiles';
 
 const ACCENT = '#10B981';
 
@@ -43,7 +41,6 @@ const CLIENT_IDS: Record<string, string> = {
 
 export default function COSAdminView() {
   const navigate = useNavigate();
-  const { clients } = useCatalogClient();
   const [sortMetric, setSortMetric] = useState<'revenue' | 'value' | 'health'>('revenue');
 
   const activeClients = ALL_CATALOG_CLIENTS.filter(c => !isClientDropped(c.id));
@@ -231,7 +228,6 @@ export default function COSAdminView() {
         </div>
         <div className="divide-y divide-white/[0.04]">
           {sortedClients.map(c => {
-            const profile = getClientProfile(c.id);
             const acc = c.accent;
             const dropped = isClientDropped(c.id);
             if (dropped) return null;
@@ -239,7 +235,14 @@ export default function COSAdminView() {
               <div
                 key={c.id}
                 className="flex items-center gap-4 px-5 py-4 hover:bg-white/[0.02] transition-colors cursor-pointer group"
-                onClick={() => navigate(`/catalog/app/client/${c.id}`)}
+                onClick={() => {
+                  const slugs: Record<string, string> = {
+                    'a1000000-0000-0000-0000-000000000001': 'bassnectar',
+                    'a2000000-0000-0000-0000-000000000002': 'santigold',
+                    'a3000000-0000-0000-0000-000000000003': 'virgin-catalog-artist',
+                  };
+                  navigate(`/catalog/app/client/${slugs[c.id] ?? c.id}`);
+                }}
               >
                 <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 border"
                   style={{ background: `${acc}14`, borderColor: `${acc}25` }}>

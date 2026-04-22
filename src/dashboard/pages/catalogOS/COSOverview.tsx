@@ -205,7 +205,9 @@ export default function COSOverview({ forceClientId }: { forceClientId?: string 
     return <Navigate to={`/catalog/app/team/${catalogOSAuth.clientId}`} replace />;
   }
 
-  const profile = getClientProfile(activeClient?.id);
+  // Prefer forceClientId (URL param) over context activeClient to avoid stale-render on client switch
+  const profileId = forceClientId ?? activeClient?.id;
+  const profile = getClientProfile(profileId);
   const { META, METRICS, METRICS_LIST, CURRENT_STATUS, ENTITIES, WEEKLY_SNAPSHOT, TASKS, EXPECTED_ANNUAL_OUTCOMES, AI_RECOMMENDATIONS, ACCOUNTING, COMMS } = profile;
   const ACCENT = activeClient?.accent_color ?? META.status_color;
 
