@@ -1,4 +1,12 @@
 import { BrowserRouter as Router, Routes, Route, Navigate, useParams } from 'react-router-dom';
+import ChefCherylLayout from './chefcheryl/ChefCherylLayout';
+import CCHome from './chefcheryl/pages/CCHome';
+import CCClasses from './chefcheryl/pages/CCClasses';
+import CCReserve from './chefcheryl/pages/CCReserve';
+import CCGallery from './chefcheryl/pages/CCGallery';
+import CCAbout from './chefcheryl/pages/CCAbout';
+import CCFAQ from './chefcheryl/pages/CCFAQ';
+import CCContact from './chefcheryl/pages/CCContact';
 import { AuthProvider } from './auth/AuthContext';
 import { IndustryOSProvider } from './auth/IndustryOSContext';
 import { RoleProvider } from './auth/RoleContext';
@@ -362,6 +370,16 @@ function App() {
             <Route path="artist-os/artists" element={<ArtistOSProtectedRoute allowedRoles={['admin_team', 'label_partner']}><ArtistOSArtists /></ArtistOSProtectedRoute>} />
             <Route path="catalog-os" element={<Navigate to="/catalog/app" replace />} />
             <Route path="catalog-os/*" element={<Navigate to="/catalog/app" replace />} />
+          </Route>
+          {/* Chef Cheryl Cooking Classes */}
+          <Route path="/chef-cheryl" element={<ChefCherylLayout />}>
+            <Route index   element={<CCHome />} />
+            <Route path="classes" element={<CCClasses />} />
+            <Route path="reserve" element={<CCReserve />} />
+            <Route path="gallery" element={<CCGallery />} />
+            <Route path="about"   element={<CCAbout />} />
+            <Route path="faq"     element={<CCFAQ />} />
+            <Route path="contact" element={<CCContact />} />
           </Route>
           <Route path="/*" element={<PublicLayout />} />
         </Routes>
