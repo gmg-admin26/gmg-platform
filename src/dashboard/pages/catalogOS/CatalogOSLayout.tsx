@@ -4,7 +4,7 @@ import {
   Library, BarChart2, DollarSign, CheckSquare, Calendar, Megaphone,
   Users, Heart, Mic2, TrendingUp, ShoppingBag, FileText, Video, Globe,
   ChevronRight, BookOpen, Bug, Activity, Layers, Wallet, LogOut,
-  HelpCircle, X, Rocket, UserMinus,
+  HelpCircle, X, Rocket, UserMinus, Shield, Target,
 } from 'lucide-react';
 import { useHelp } from '../../context/HelpContext';
 import { CatalogClientProvider, useCatalogClient } from '../../context/CatalogClientContext';
@@ -20,6 +20,7 @@ interface NavItemDef {
 }
 
 const GROUP_A: NavItemDef[] = [
+  { icon: Shield,      label: 'Admin Operations',  slug: 'admin',       end: false, adminOnly: true },
   { icon: Library,     label: 'Overview',          slug: 'overview',    end: false },
   { icon: TrendingUp,  label: 'Catalog Value',      slug: 'value',       end: false },
   { icon: Layers,      label: 'Asset Library',      slug: 'assets',      end: false },

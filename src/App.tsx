@@ -121,6 +121,8 @@ import COSMeetings from './dashboard/pages/catalogOS/COSMeetings';
 import COSEntities from './dashboard/pages/catalogOS/COSEntities';
 import COSFutures from './dashboard/pages/catalogOS/COSFutures';
 import COSDroppedQueue from './dashboard/pages/catalogOS/COSDroppedQueue';
+import COSAdminView from './dashboard/pages/catalogOS/COSAdminView';
+import COSTeamView from './dashboard/pages/catalogOS/COSTeamView';
 import DealPipeline from './dashboard/pages/DealPipeline';
 import WeeklySignings from './dashboard/pages/WeeklySignings';
 import ArtistOSCampaignCenter from './dashboard/pages/ArtistOSCampaignCenter';
@@ -139,15 +141,26 @@ function CatalogOSIndexDispatch() {
   const cosClientId = (() => {
     try { return localStorage.getItem('catalogos_client_id') || sessionStorage.getItem('catalogos_client_id') || ''; } catch { return ''; }
   })();
-  if (cosRole === 'catalog_admin' || !cosClientId) return <COSRoster />;
+  // Admin → internal admin view
+  if (cosRole === 'catalog_admin') return <COSAdminView />;
+  // No client ID → admin view as fallback
+  if (!cosClientId) return <COSAdminView />;
+  // Marketing team → restricted team view
+  if (cosRole === 'catalog_team') return <Navigate to={`/catalog/app/team/${cosClientId}`} replace />;
+  // Client owner → full client page
   return <Navigate to={`/catalog/app/client/${cosClientId}`} replace />;
 }
 
-// Renders COSOverview for a specific client identified by URL param.
-// Must be rendered inside CatalogOSLayout (so CatalogClientContext is available).
+// Full client view — identified by URL clientId param
 function COSClientRoute() {
   const { clientId } = useParams<{ clientId: string }>();
   return <COSOverview forceClientId={clientId} />;
+}
+
+// Restricted team view — identified by URL clientId param
+function COSTeamRoute() {
+  const { clientId } = useParams<{ clientId: string }>();
+  return <COSTeamView forceClientId={clientId} />;
 }
 
 function PublicLayout() {
@@ -223,9 +236,11 @@ function App() {
           <Route path="/catalog-os/login" element={<CatalogOSLogin />} />
           <Route path="/catalog/app" element={<CatalogOSProtectedRoute><CatalogOSLayout /></CatalogOSProtectedRoute>}>
             <Route index element={<CatalogOSIndexDispatch />} />
-            <Route path="roster"        element={<COSRoster />} />
-            <Route path="overview"      element={<COSOverview />} />
+            <Route path="admin"            element={<COSAdminView />} />
+            <Route path="roster"           element={<COSRoster />} />
+            <Route path="overview"         element={<COSOverview />} />
             <Route path="client/:clientId" element={<COSClientRoute />} />
+            <Route path="team/:clientId"   element={<COSTeamRoute />} />
             <Route path="dropped-queue" element={<COSDroppedQueue />} />
             <Route path="value"     element={<COSValue />} />
             <Route path="assets"    element={<COSAssets />} />

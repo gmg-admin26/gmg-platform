@@ -198,7 +198,12 @@ export default function COSOverview({ forceClientId }: { forceClientId?: string 
   }, [activeClient?.id]);
 
   // Admin guard — all hooks above this line
-  if (isAdmin) return <Navigate to="/catalog/app/roster" replace />;
+  if (isAdmin) return <Navigate to="/catalog/app/admin" replace />;
+
+  // Marketing team gets restricted view
+  if (catalogOSAuth.role === 'catalog_team' && catalogOSAuth.clientId) {
+    return <Navigate to={`/catalog/app/team/${catalogOSAuth.clientId}`} replace />;
+  }
 
   const profile = getClientProfile(activeClient?.id);
   const { META, METRICS, METRICS_LIST, CURRENT_STATUS, ENTITIES, WEEKLY_SNAPSHOT, TASKS, EXPECTED_ANNUAL_OUTCOMES, AI_RECOMMENDATIONS, ACCOUNTING, COMMS } = profile;

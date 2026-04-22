@@ -319,10 +319,13 @@ export default function CatalogOSLogin() {
               </p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
                 {[
-                  { label: 'Admin', email: 'catalog@gmg.ai', password: 'GMGcatalog123!' },
-                  { label: 'Bassnectar', email: 'client@bassnectar.net', password: 'bassnectar123' },
-                  { label: 'Santigold', email: 'client@santigold.com', password: 'santigold123' },
-                  { label: 'Virgin Catalog', email: 'client@artist03.com', password: 'artist03123' },
+                  { label: 'Admin',                email: 'catalog@gmg.ai',                    password: 'GMGcatalog123!'      },
+                  { label: 'Bassnectar',            email: 'client@bassnectar.net',             password: 'bassnectar123'       },
+                  { label: 'Santigold',             email: 'client@santigold.com',              password: 'santigold123'        },
+                  { label: 'Virgin Catalog',        email: 'client@artist03.com',               password: 'artist03123'         },
+                  { label: 'Team · Bassnectar',     email: 'marketing+bassnectar@gmg.ai',       password: 'team-bassnectar123'  },
+                  { label: 'Team · Santigold',      email: 'marketing+santigold@gmg.ai',        password: 'team-santigold123'   },
+                  { label: 'Team · Virgin',         email: 'marketing+virgincatalog@gmg.ai',    password: 'team-virgin123'      },
                 ].map(cred => (
                   <button
                     key={cred.label}
