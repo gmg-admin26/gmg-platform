@@ -268,6 +268,15 @@ function ClientSidebar() {
         )}
       </div>
 
+      <div className="px-3 py-2 border-b border-white/[0.05] shrink-0">
+        <NavLink to="/catalog/app/roster"
+          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded text-[10px] text-white/35 hover:text-white/70 hover:bg-white/[0.04] transition-all w-full"
+        >
+          <ChevronRight className="w-3 h-3 shrink-0 rotate-180" />
+          <span className="font-mono tracking-wide">Back to Catalog Clients</span>
+        </NavLink>
+      </div>
+
       <nav className="flex-1 py-2 overflow-y-auto">
         <div className="px-4 pt-2 pb-1">
           <span className="text-[8px] font-mono text-white/15 uppercase tracking-[0.18em]">Strategic</span>
@@ -283,14 +292,6 @@ function ClientSidebar() {
       </nav>
 
       <div className="px-4 py-3 border-t border-white/[0.05] shrink-0 space-y-1">
-        {catalogOSAuth.role === 'catalog_admin' && (
-          <NavLink to="/catalog/app/roster"
-            className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded text-[11px] text-white/30 hover:text-white/65 hover:bg-white/[0.04] transition-all"
-          >
-            <Users className="w-3 h-3 shrink-0" />
-            <span>Catalog Clients</span>
-          </NavLink>
-        )}
         {catalogOSAuth.authenticated && (
           <button onClick={logoutCatalogOS}
             className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded text-[11px] text-white/30 hover:text-white/65 hover:bg-white/[0.04] transition-all group"
