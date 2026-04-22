@@ -1,10 +1,10 @@
 import { useState, useRef, useEffect } from 'react';
-import { NavLink, Outlet, useLocation, useParams } from 'react-router-dom';
+import { NavLink, Outlet, useLocation, useParams, useNavigate } from 'react-router-dom';
 import {
   Library, BarChart2, DollarSign, CheckSquare, Calendar, Megaphone,
   Users, Heart, Mic2, TrendingUp, ShoppingBag, FileText, Video, Globe,
   ChevronRight, BookOpen, Bug, Activity, Layers, Wallet, LogOut,
-  HelpCircle, X, Rocket, UserMinus, Shield, Target,
+  HelpCircle, X, Rocket, UserMinus, Shield, Target, Zap,
 } from 'lucide-react';
 import { useHelp } from '../../context/HelpContext';
 import { CatalogClientProvider, useCatalogClient } from '../../context/CatalogClientContext';
@@ -54,6 +54,25 @@ const CLIENT_GROUP_B: NavItemDef[] = [
   { icon: ShoppingBag, label: 'Inventory + Merch',  slug: 'inventory',   end: false },
   { icon: Wallet,      label: 'Project OS',         slug: 'workers',     end: false },
 ];
+
+// ── GMG top bar (shared across admin + client layouts) ───────────────────────
+
+function CatalogOSTopBar() {
+  const navigate = useNavigate();
+  return (
+    <header className="h-11 shrink-0 flex items-center px-4 border-b border-white/[0.06] bg-[#090A0D]">
+      <button
+        onClick={() => navigate('/dashboard')}
+        className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+        title="Admin Command Center"
+      >
+        <Zap className="w-4 h-4 text-[#06B6D4]" />
+        <span className="text-[12px] font-semibold tracking-[0.12em] uppercase text-white/80">GMG</span>
+        <span className="text-[8.5px] font-mono px-1.5 py-0.5 rounded bg-[#06B6D4]/10 text-[#06B6D4] border border-[#06B6D4]/20 ml-1">LIVE</span>
+      </button>
+    </header>
+  );
+}
 
 // ── Floating support button (shared) ─────────────────────────────────────────
 
@@ -309,11 +328,14 @@ function ClientSidebar() {
 
 export function CatalogAdminLayout() {
   return (
-    <div className="flex h-screen bg-[#07080A]">
-      <AdminSidebar />
-      <main className="flex-1 overflow-y-auto">
-        <Outlet />
-      </main>
+    <div className="flex flex-col h-screen bg-[#07080A]">
+      <CatalogOSTopBar />
+      <div className="flex flex-1 min-h-0">
+        <AdminSidebar />
+        <main className="flex-1 overflow-y-auto">
+          <Outlet />
+        </main>
+      </div>
       <FloatingSupportButton />
     </div>
   );
@@ -324,11 +346,14 @@ export function CatalogAdminLayout() {
 export function CatalogClientLayout() {
   return (
     <CatalogClientProvider>
-      <div className="flex h-screen bg-[#07080A]">
-        <ClientSidebar />
-        <main className="flex-1 overflow-y-auto">
-          <Outlet />
-        </main>
+      <div className="flex flex-col h-screen bg-[#07080A]">
+        <CatalogOSTopBar />
+        <div className="flex flex-1 min-h-0">
+          <ClientSidebar />
+          <main className="flex-1 overflow-y-auto">
+            <Outlet />
+          </main>
+        </div>
         <FloatingSupportButton />
       </div>
     </CatalogClientProvider>
