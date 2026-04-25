@@ -1,0 +1,186 @@
+/*
+  industry-os.css
+  ───────────────────────────────────────────────────────────────────────────
+  CSS required specifically by the Industry OS page and its components.
+  Add these rules to your project's global CSS (e.g. index.css / global.css).
+
+  DEPENDS ON: Tailwind CSS (base/components/utilities must already be loaded).
+
+  FONT IMPORTS (add to the top of your global CSS if not already present):
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    @import url('https://api.fontshare.com/v2/css?f[]=satoshi@700,500,900&display=swap');
+
+  BASE BODY (add once to your project if not already set):
+    body { font-family: 'Inter', system-ui, -apple-system, sans-serif; }
+    h1,h2,h3,h4,h5,h6 { font-family: 'Satoshi', sans-serif; font-weight: 700; }
+*/
+
+/* ── Scroll reveal system ──────────────────────────────────────────────────── */
+
+@keyframes reveal-rise {
+  from { opacity: 0; transform: translateY(44px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes reveal-child {
+  from { opacity: 0; transform: translateY(28px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes reveal-fade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.reveal-section {
+  opacity: 0;
+  transform: translateY(44px);
+  transition:
+    opacity  0.72s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.72s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity, transform;
+}
+
+.reveal-section.is-revealed {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.reveal-child {
+  opacity: 0;
+  transform: translateY(28px);
+  transition:
+    opacity  0.62s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.62s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity, transform;
+}
+
+.reveal-child.is-revealed {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal-section,
+  .reveal-child {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+}
+
+/* ── Custom cursor (optional — remove if your project has its own) ─────────── */
+
+@media (hover: hover) and (pointer: fine) {
+  *, *::before, *::after {
+    cursor: none !important;
+  }
+}
+
+a, button, [role="button"], [data-interactive], label[for] {
+  cursor: pointer;
+}
+
+/* ── gmg-btn: button interaction class ────────────────────────────────────── */
+
+.gmg-btn {
+  transition:
+    transform  0.22s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.22s ease,
+    background 0.18s ease,
+    border-color 0.18s ease;
+  transform-origin: center;
+  will-change: transform;
+}
+
+.gmg-btn:hover {
+  transform: scale(1.03);
+}
+
+.gmg-btn:active {
+  transform: scale(0.98) !important;
+  transition-duration: 0.08s;
+}
+
+/* ── gmg-card: interactive card class ─────────────────────────────────────── */
+
+.gmg-card {
+  cursor: pointer;
+  transition:
+    transform  0.28s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.28s ease,
+    border-color 0.28s ease,
+    background  0.28s ease;
+  transform-origin: center;
+  will-change: transform;
+}
+
+.gmg-card:active {
+  transform: scale(0.99) !important;
+  transition-duration: 0.08s;
+}
+
+/* ── Magnetic card inner ───────────────────────────────────────────────────── */
+
+.gmg-card-inner {
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform;
+}
+
+/* ── Industry OS hero entry sequence ──────────────────────────────────────── */
+
+.entry-el {
+  transition:
+    opacity  0.72s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.72s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity, transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .entry-el {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+}
+
+/* ── Industry OS ambient keyframe animations ──────────────────────────────── */
+
+@keyframes sys-init-pulse {
+  0%   { opacity: 0.75; transform: scale(0.98); }
+  50%  { opacity: 1.00; transform: scale(1.03); }
+  100% { opacity: 0.82; transform: scale(1.00); }
+}
+
+@keyframes gig-drift {
+  0%   { transform: translate(0, 0) scale(1);       opacity: 0.85; }
+  50%  { transform: translate(3%, -2%) scale(1.04);  opacity: 1;    }
+  100% { transform: translate(-2%, 3%) scale(1.06);  opacity: 0.90; }
+}
+
+@keyframes learn-pulse {
+  0%   { opacity: 0.7; transform: scale(1); }
+  50%  { opacity: 1;   transform: scale(1.05); }
+  100% { opacity: 0.8; transform: scale(1.02); }
+}
+
+@keyframes cta-pulse {
+  0%   { opacity: 0.6; transform: scale(0.98); }
+  50%  { opacity: 1;   transform: scale(1.04); }
+  100% { opacity: 0.75; transform: scale(1.01); }
+}
+
+/* ── Reduced-motion: kill all looping decorative animations ───────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  .gmg-btn,
+  .gmg-card,
+  .gmg-card-inner {
+    transition: none !important;
+    will-change: auto;
+  }
+
+  [style*="animation"] {
+    animation: none !important;
+  }
+}
