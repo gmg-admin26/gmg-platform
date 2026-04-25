@@ -2,6 +2,7 @@ import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from './AuthContext';
 import { useRole } from './RoleContext';
 import { type ArtistOSRole } from './roles';
+import { ROUTES } from '../lib/routes';
 import type { ReactNode } from 'react';
 
 interface Props {
@@ -10,9 +11,9 @@ interface Props {
 }
 
 const ROLE_HOME: Record<ArtistOSRole, string> = {
-  artist_manager: '/dashboard/artist-os',
-  label_partner: '/dashboard/artist-os',
-  admin_team: '/dashboard/artist-os',
+  artist_manager: ROUTES.ARTIST_OS,
+  label_partner:  ROUTES.ARTIST_OS,
+  admin_team:     ROUTES.ARTIST_OS,
 };
 
 export default function ArtistOSProtectedRoute({ children, allowedRoles }: Props) {
@@ -21,7 +22,7 @@ export default function ArtistOSProtectedRoute({ children, allowedRoles }: Props
   const location = useLocation();
 
   if (!auth.authenticated) {
-    return <Navigate to="/login/artist-os" state={{ from: location }} replace />;
+    return <Navigate to={ROUTES.LOGIN_ARTIST_OS} state={{ from: location }} replace />;
   }
 
   if (allowedRoles && roleState.role && !allowedRoles.includes(roleState.role)) {

@@ -313,9 +313,45 @@ export default function CatalogOSLogin() {
               </button>
             </form>
 
+            <div style={{ marginTop: 20, paddingTop: 16, borderTop: '1px solid rgba(255,255,255,0.04)' }}>
+              <p style={{ fontFamily: 'monospace', fontSize: 8, letterSpacing: '0.14em', color: 'rgba(255,255,255,0.15)', textTransform: 'uppercase', marginBottom: 8 }}>
+                Demo Logins
+              </p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+                {[
+                  { label: 'Admin',                email: 'catalog@gmg.ai',                    password: 'GMGcatalog123!'      },
+                  { label: 'Bassnectar',            email: 'client@bassnectar.net',             password: 'bassnectar123'       },
+                  { label: 'Santigold',             email: 'client@santigold.com',              password: 'santigold123'        },
+                  { label: 'Virgin Catalog',        email: 'client@artist03.com',               password: 'artist03123'         },
+                  { label: 'Team · Bassnectar',     email: 'marketing+bassnectar@gmg.ai',       password: 'team-bassnectar123'  },
+                  { label: 'Team · Santigold',      email: 'marketing+santigold@gmg.ai',        password: 'team-santigold123'   },
+                  { label: 'Team · Virgin',         email: 'marketing+virgincatalog@gmg.ai',    password: 'team-virgin123'      },
+                ].map(cred => (
+                  <button
+                    key={cred.label}
+                    type="button"
+                    disabled={loading}
+                    onClick={() => { setEmail(cred.email); setPassword(cred.password); setError(''); }}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 8,
+                      padding: '7px 10px', borderRadius: 7, cursor: 'pointer',
+                      background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)',
+                      color: 'rgba(255,255,255,0.35)', fontSize: 11, fontFamily: 'monospace',
+                      transition: 'all 0.15s', textAlign: 'left',
+                    }}
+                    onMouseEnter={e => { const b = e.currentTarget; b.style.background = 'rgba(16,185,129,0.06)'; b.style.borderColor = 'rgba(16,185,129,0.18)'; b.style.color = 'rgba(16,185,129,0.7)'; }}
+                    onMouseLeave={e => { const b = e.currentTarget; b.style.background = 'rgba(255,255,255,0.02)'; b.style.borderColor = 'rgba(255,255,255,0.06)'; b.style.color = 'rgba(255,255,255,0.35)'; }}
+                  >
+                    <span style={{ fontSize: 10, fontWeight: 700, minWidth: 60 }}>{cred.label}</span>
+                    <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.2)' }}>{cred.email}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
             <div style={{
               display: 'flex', alignItems: 'center', gap: 16,
-              marginTop: 24, paddingTop: 24,
+              marginTop: 20, paddingTop: 20,
               borderTop: '1px solid rgba(255,255,255,0.05)',
             }}>
               <button

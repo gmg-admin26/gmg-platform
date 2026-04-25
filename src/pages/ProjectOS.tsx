@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Lock, ChevronRight, Briefcase, ShieldCheck, Users as Users2 } from 'lucide-react';
 import { useIndustryOS } from '../auth/IndustryOSContext';
+import { ROUTES } from '../lib/routes';
 import IndustryProjectOS from './industryOS/IndustryProjectOS';
 import IndustryProjectOSAdmin from './industryOS/IndustryProjectOSAdmin';
 
@@ -73,12 +74,12 @@ function AdminProjectOS() {
     <div className="min-h-screen bg-[#07080A]">
       <header className="border-b border-white/[0.05] bg-[#07080A]/95 backdrop-blur-sm sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 flex items-center gap-4 h-14">
-          <div className="flex items-center gap-2.5">
+          <Link to={ROUTES.SYSTEM_HUB} className="flex items-center gap-2.5 hover:opacity-80 transition-opacity">
             <div className="w-6 h-6 rounded-lg flex items-center justify-center bg-[#F59E0B]/15 border border-[#F59E0B]/25">
               <ShieldCheck className="w-3 h-3 text-[#F59E0B]" />
             </div>
             <span className="text-[11px] font-mono text-white/40 uppercase tracking-[0.18em]">Project OS · Admin</span>
-          </div>
+          </Link>
           <div className="flex items-center gap-1.5 bg-[#F59E0B]/[0.08] border border-[#F59E0B]/20 rounded-lg px-2.5 py-1">
             <div className="w-1.5 h-1.5 rounded-full bg-[#F59E0B] animate-pulse" />
             <span className="text-[8.5px] font-mono text-[#F59E0B]/70">Admin Access</span>
@@ -126,12 +127,12 @@ function WorkerProjectOS() {
     <div className="min-h-screen bg-[#07080A]">
       <header className="border-b border-white/[0.05] bg-[#07080A]/95 backdrop-blur-sm sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 flex items-center gap-4 h-14">
-          <div className="flex items-center gap-2.5">
+          <Link to={ROUTES.SYSTEM_HUB} className="flex items-center gap-2.5 hover:opacity-80 transition-opacity">
             <div className="w-6 h-6 rounded-lg flex items-center justify-center bg-[#10B981]/15 border border-[#10B981]/25">
               <Briefcase className="w-3 h-3 text-[#10B981]" />
             </div>
             <span className="text-[11px] font-mono text-white/40 uppercase tracking-[0.18em]">Project OS</span>
-          </div>
+          </Link>
           <div className="flex items-center gap-1.5 bg-[#10B981]/[0.08] border border-[#10B981]/20 rounded-lg px-2.5 py-1">
             <div className="w-1.5 h-1.5 rounded-full bg-[#10B981] animate-pulse" />
             <span className="text-[8.5px] font-mono text-[#10B981]/70">Active Assignment</span>

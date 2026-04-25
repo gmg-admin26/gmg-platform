@@ -1,12 +1,10 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Library, TrendingUp, TrendingDown, AlertCircle, Clock, ChevronRight, Zap, DollarSign, FileText, CheckSquare, Building2, Users, Mic2, MapPin, Mail, Send, MessageSquare, Bot, User, Flag, ArrowUpRight, Calendar, Megaphone, ShoppingBag, Music, Scale, Star, Target, Activity, RefreshCw, ExternalLink, Video, Globe, BarChart2, Heart, Shield, Rocket, Database, Search, BarChart, PieChart, Headphones, Settings } from 'lucide-react';
+import { useNavigate, Navigate } from 'react-router-dom';
+import { Library, TrendingUp, TrendingDown, AlertCircle, Clock, ChevronRight, Zap, DollarSign, FileText, CheckSquare, Building2, Users, Mic2, MapPin, Mail, Send, MessageSquare, Bot, User, Flag, ArrowUpRight, Calendar, Megaphone, ShoppingBag, Music, Scale, Star, Target, Activity, RefreshCw, ExternalLink, Video, Globe, BarChart2, Heart, Shield, Rocket, Database, Search, BarChart, PieChart, Headphones, Settings, Lock, UserMinus, ArrowLeft } from 'lucide-react';
+import { isClientDropped, fetchLifecycleEventForClient, initCatalogDropState, type CatalogLifecycleEvent } from '../../data/catalogDropService';
+import { useAuth } from '../../../auth/AuthContext';
 import OperatorTeamGrid from '../../components/artistOS/OperatorTeamGrid';
-import {
-  BN_META, BN_METRICS, BN_METRICS_LIST, BN_CURRENT_STATUS,
-  BN_ENTITIES, BN_WEEKLY_SNAPSHOT, BN_TASKS, BN_TIMELINE,
-  BN_EXPECTED_ANNUAL_OUTCOMES, BN_AI_RECOMMENDATIONS, BN_ACCOUNTING, BN_COMMS,
-} from '../../data/bassnectarCatalogData';
+import { getClientProfile } from '../../data/catalogClientProfiles';
 import { useTasks } from '../../context/TaskContext';
 import TaskWidget from '../../components/tasks/TaskWidget';
 import { useCatalogClient } from '../../context/CatalogClientContext';
@@ -168,20 +166,197 @@ function ClientContextBanner() {
   );
 }
 
-export default function COSOverview() {
+export default function COSOverview({ forceClientId }: { forceClientId?: string } = {}) {
   const [now, setNow] = useState(new Date());
   const { openSubmit } = useTasks();
   const navigate = useNavigate();
+  const { activeClient, switchClient } = useCatalogClient();
+  const { catalogOSAuth } = useAuth();
+  // When arriving via a direct /client/:id route, forceClientId is authoritative.
+  // Never treat that as admin — the route param IS the client selection.
+  const isAdmin = !forceClientId && (catalogOSAuth.role === 'catalog_admin' || !catalogOSAuth.clientId);
+
+  // Resolve the target client ID: URL param wins over auth clientId
+  const targetId = forceClientId ?? (!isAdmin ? catalogOSAuth.clientId : undefined);
+  useEffect(() => {
+    if (targetId && activeClient?.id !== targetId) {
+      switchClient(targetId);
+    }
+  }, [targetId, activeClient?.id, switchClient]);
+
   useEffect(() => {
     const t = setInterval(() => setNow(new Date()), 1000);
     return () => clearInterval(t);
   }, []);
 
-  const openTasks = BN_TASKS.filter(t => t.status !== 'completed');
-  const flaggedTasks = BN_TASKS.filter(t => t.flagged);
+  const [dropRecord, setDropRecord] = useState<CatalogLifecycleEvent | null>(null);
+  useEffect(() => {
+    initCatalogDropState();
+    if (activeClient) {
+      fetchLifecycleEventForClient(activeClient.id).then(setDropRecord);
+    } else {
+      setDropRecord(null);
+    }
+  }, [activeClient?.id]);
+
+  // Admin guard — all hooks above this line
+  if (isAdmin) return <Navigate to="/catalog/app/admin" replace />;
+
+  // Marketing team gets restricted view
+  if (catalogOSAuth.role === 'catalog_team' && catalogOSAuth.clientId) {
+    return <Navigate to={`/catalog/app/team/${catalogOSAuth.clientId}`} replace />;
+  }
+
+  // Prefer forceClientId (URL param) over context activeClient to avoid stale-render on client switch
+  const profileId = forceClientId ?? activeClient?.id;
+  const profile = getClientProfile(profileId);
+  const { META, METRICS, METRICS_LIST, CURRENT_STATUS, ENTITIES, WEEKLY_SNAPSHOT, TASKS, EXPECTED_ANNUAL_OUTCOMES, AI_RECOMMENDATIONS, ACCOUNTING, COMMS } = profile;
+  const ACCENT = (forceClientId ? null : activeClient?.accent_color) ?? META.status_color;
+
+  const openTasks = TASKS.filter(t => t.status !== 'completed');
+  const flaggedTasks = TASKS.filter(t => t.flagged);
+
+  const clientDropped = activeClient ? isClientDropped(activeClient.id) : false;
+
+  if (clientDropped && activeClient) {
+    return (
+      <div className="min-h-full bg-[#07080A]">
+        {isAdmin && (
+          <div style={{ padding: '12px 18px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+            <button
+              onClick={() => navigate('/catalog/app/roster')}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 6,
+                padding: '6px 12px', borderRadius: 8, cursor: 'pointer',
+                background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)',
+                color: 'rgba(255,255,255,0.45)', fontSize: 11, fontWeight: 600,
+                transition: 'all 0.12s',
+              }}
+              onMouseEnter={e => { const b = e.currentTarget; b.style.background = 'rgba(255,255,255,0.07)'; b.style.color = 'rgba(255,255,255,0.7)'; }}
+              onMouseLeave={e => { const b = e.currentTarget; b.style.background = 'rgba(255,255,255,0.04)'; b.style.color = 'rgba(255,255,255,0.45)'; }}
+            >
+              <ArrowLeft size={12} /> Back to Catalog Clients
+            </button>
+          </div>
+        )}
+
+        {/* Lock banner */}
+        <div style={{
+          background: 'rgba(239,68,68,0.06)',
+          borderBottom: '2px solid rgba(239,68,68,0.25)',
+          padding: '0',
+        }}>
+          <div style={{ height: 2, background: 'linear-gradient(90deg,transparent,rgba(239,68,68,0.5),transparent)' }} />
+        </div>
+
+        <div style={{ padding: '48px 32px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '80vh', textAlign: 'center' }}>
+          {/* Lock icon */}
+          <div style={{
+            width: 64, height: 64, borderRadius: 18,
+            background: 'rgba(239,68,68,0.08)', border: '2px solid rgba(239,68,68,0.25)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            marginBottom: 20,
+          }}>
+            <Lock size={26} color="#EF4444" />
+          </div>
+
+          {/* Status badge */}
+          <div style={{ marginBottom: 14, display: 'flex', alignItems: 'center', gap: 8 }}>
+            <UserMinus size={13} color="#EF4444" />
+            <span style={{ fontFamily: 'monospace', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.12em', color: '#EF4444' }}>
+              Client Dropped · Read-Only
+            </span>
+          </div>
+
+          <h2 style={{ fontSize: 22, fontWeight: 800, color: 'rgba(255,255,255,0.7)', marginBottom: 6 }}>
+            {activeClient.name}
+          </h2>
+
+          <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.35)', lineHeight: 1.7, maxWidth: 420, marginBottom: 20 }}>
+            This client has been moved to the Dropped Queue. Their profile is locked for active management
+            but remains viewable by admin for historical reference and investor review.
+          </p>
+
+          {dropRecord?.notes && (
+            <div style={{
+              marginBottom: 20, padding: '10px 16px', borderRadius: 10,
+              background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)',
+              maxWidth: 400,
+            }}>
+              <span style={{ fontSize: 9.5, fontFamily: 'monospace', color: 'rgba(255,255,255,0.25)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Exit Reason: </span>
+              <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.45)' }}>{dropRecord.notes}</span>
+            </div>
+          )}
+
+          {/* Locked snapshot */}
+          <div style={{
+            display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10, maxWidth: 480, marginBottom: 28,
+          }}>
+            {[
+              { label: 'Catalog Value', value: '$—', sub: 'Locked' },
+              { label: 'Monthly Rev',   value: '$—', sub: 'Locked' },
+              { label: 'Client Since',  value: activeClient.client_since ?? '—', sub: 'Historical' },
+            ].map(m => (
+              <div key={m.label} style={{
+                padding: '10px 14px', borderRadius: 10,
+                background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)',
+              }}>
+                <div style={{ fontSize: 15, fontWeight: 800, color: 'rgba(255,255,255,0.3)', fontFamily: 'monospace' }}>{m.value}</div>
+                <div style={{ fontSize: 8.5, color: 'rgba(255,255,255,0.2)', textTransform: 'uppercase', letterSpacing: '0.06em', marginTop: 3 }}>{m.label}</div>
+                <div style={{ fontSize: 8, color: 'rgba(239,68,68,0.5)', fontFamily: 'monospace', marginTop: 1 }}>{m.sub}</div>
+              </div>
+            ))}
+          </div>
+
+          {isAdmin && (
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button
+                onClick={() => navigate('/catalog/app/dropped-queue')}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 6,
+                  padding: '9px 16px', borderRadius: 10, cursor: 'pointer',
+                  background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.25)',
+                  color: '#10B981', fontSize: 12, fontWeight: 700,
+                }}
+              >
+                <RefreshCw size={12} /> Reinstate from Dropped Queue
+              </button>
+              <button
+                onClick={() => navigate('/catalog/app/roster')}
+                style={{
+                  padding: '9px 14px', borderRadius: 10, cursor: 'pointer',
+                  background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.09)',
+                  color: 'rgba(255,255,255,0.4)', fontSize: 12, fontWeight: 600,
+                }}
+              >
+                Back to Roster
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-full bg-[#07080A]">
+      {isAdmin && (
+        <div className="px-5 pt-3 pb-0">
+          <button
+            onClick={() => navigate('/catalog/app/roster')}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold transition-all"
+            style={{
+              background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)',
+              color: 'rgba(255,255,255,0.45)',
+            }}
+            onMouseEnter={e => { const b = e.currentTarget; b.style.background = 'rgba(255,255,255,0.07)'; b.style.color = 'rgba(255,255,255,0.7)'; }}
+            onMouseLeave={e => { const b = e.currentTarget; b.style.background = 'rgba(255,255,255,0.04)'; b.style.color = 'rgba(255,255,255,0.45)'; }}
+          >
+            <ArrowLeft className="w-3 h-3" /> Back to Catalog Clients
+          </button>
+        </div>
+      )}
+
       <ClientContextBanner />
 
       {/* ──────────────────────────────────────────────
@@ -197,50 +372,50 @@ export default function COSOverview() {
 
         <div className="px-6 pt-6 pb-6">
           <div className="flex items-start gap-5 flex-wrap">
-            {BN_META.logo_url ? (
+            {META.logo_url ? (
               <div className="w-16 h-16 rounded-2xl flex items-center justify-center shrink-0 overflow-hidden"
-                style={{ background: 'linear-gradient(135deg, #10B98118, #06B6D40E)', border: '1px solid #10B98120' }}>
+                style={{ background: `linear-gradient(135deg, ${ACCENT}18, ${ACCENT}0E)`, border: `1px solid ${ACCENT}20` }}>
                 <img
-                  src={BN_META.logo_url}
-                  alt={BN_META.artist_name}
+                  src={META.logo_url}
+                  alt={META.artist_name}
                   className="w-full h-full object-contain p-2"
                   onError={e => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
                 />
               </div>
             ) : (
               <div className="w-16 h-16 rounded-2xl flex items-center justify-center shrink-0"
-                style={{ background: 'linear-gradient(135deg, #10B98122, #06B6D414)', border: '1px solid #10B98120' }}>
-                <Library className="w-7 h-7 text-[#10B981]" />
+                style={{ background: `linear-gradient(135deg, ${ACCENT}22, ${ACCENT}14)`, border: `1px solid ${ACCENT}20` }}>
+                <Library className="w-7 h-7" style={{ color: ACCENT }} />
               </div>
             )}
 
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-3 flex-wrap mb-1">
-                <h1 className="text-[22px] font-bold text-white tracking-tight leading-none">{BN_META.catalog_name}</h1>
+                <h1 className="text-[22px] font-bold text-white tracking-tight leading-none">{META.catalog_name}</h1>
                 <span className="text-[9px] font-mono px-2.5 py-0.5 rounded-full tracking-widest border"
-                  style={{ color: BN_META.status_color, background: `${BN_META.status_color}14`, borderColor: `${BN_META.status_color}28` }}>
-                  {BN_META.status_label.toUpperCase()}
+                  style={{ color: META.status_color, background: `${META.status_color}14`, borderColor: `${META.status_color}28` }}>
+                  {META.status_label.toUpperCase()}
                 </span>
               </div>
-              <p className="text-[13px] text-white/50 mb-2.5">{BN_META.company_name}</p>
+              <p className="text-[13px] text-white/50 mb-2.5">{META.company_name}</p>
 
               <div className="flex items-center gap-4 flex-wrap text-[10.5px] text-white/30">
                 <span className="flex items-center gap-1.5">
                   <Users className="w-3 h-3 text-white/20" />
-                  <span className="text-white/50">{BN_META.catalog_rep}</span>
+                  <span className="text-white/50">{META.catalog_rep}</span>
                 </span>
                 <span className="text-white/15">·</span>
                 <span className="flex items-center gap-1.5">
                   <Scale className="w-3 h-3 text-white/20" />
-                  {BN_META.attorney}
+                  {META.attorney}
                 </span>
                 <span className="text-white/15">·</span>
                 <span className="flex items-center gap-1.5">
                   <RefreshCw className="w-3 h-3 text-white/20" />
-                  Updated {BN_META.last_updated}
+                  Updated {META.last_updated}
                 </span>
                 <span className="text-white/15">·</span>
-                <span>{BN_META.years_active}</span>
+                <span>{META.years_active}</span>
               </div>
             </div>
 
@@ -253,8 +428,8 @@ export default function COSOverview() {
           </div>
 
           <div className="mt-4 max-w-4xl">
-            <p className="text-[12px] text-white/40 leading-relaxed">{BN_META.description}</p>
-            <p className="text-[11px] font-mono text-[#10B981]/55 mt-2">{BN_META.strategic_focus}</p>
+            <p className="text-[12px] text-white/40 leading-relaxed">{META.description}</p>
+            <p className="text-[11px] font-mono mt-2" style={{ color: `${ACCENT}88` }}>{META.strategic_focus}</p>
           </div>
 
           <div className="flex items-center gap-2.5 mt-5 flex-wrap">
@@ -266,7 +441,7 @@ export default function COSOverview() {
               Open Sale Room
             </button>
             <button
-              onClick={() => openSubmit('catalog_os', BN_META.catalog_name)}
+              onClick={() => openSubmit('catalog_os', META.catalog_name)}
               className="flex items-center gap-2 px-4 py-2 rounded-lg text-[11.5px] font-semibold border border-white/[0.09] text-white/55 hover:text-white/80 hover:bg-white/[0.04] transition-all">
               <CheckSquare className="w-3.5 h-3.5" />
               Submit Task / Request
@@ -279,9 +454,9 @@ export default function COSOverview() {
             </button>
             <div className="ml-auto flex items-center gap-2 text-[9.5px]">
               <span className="font-mono text-white/20 uppercase tracking-wider">Client since</span>
-              <span className="font-mono text-white/40">{BN_META.client_since}</span>
+              <span className="font-mono text-white/40">{META.client_since}</span>
               <span className="font-mono text-white/20">·</span>
-              <span className="font-mono text-white/20">{BN_META.total_releases} releases</span>
+              <span className="font-mono text-white/20">{META.total_releases} releases</span>
             </div>
           </div>
         </div>
@@ -295,8 +470,8 @@ export default function COSOverview() {
         <section>
           <SectionDivider label="Top Metrics" index="02" accent="#10B981" />
           <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-9 gap-2.5">
-            {BN_METRICS_LIST.map(key => (
-              <MetricTile key={key} m={BN_METRICS[key]} />
+            {METRICS_LIST.map(key => (
+              <MetricTile key={key} m={METRICS[key]} />
             ))}
           </div>
         </section>
@@ -305,7 +480,7 @@ export default function COSOverview() {
             03-A. TASK WIDGET
         ─────────────────────────────────────────────── */}
         <section>
-          <TaskWidget system="catalog_os" entityName={BN_META.catalog_name} accent="#10B981" />
+          <TaskWidget system="catalog_os" entityName={META.catalog_name} accent={ACCENT} />
         </section>
 
         {/* ──────────────────────────────────────────────
@@ -324,13 +499,13 @@ export default function COSOverview() {
                   <Target className="w-4 h-4 text-[#F59E0B]" />
                 </div>
                 <div>
-                  <h3 className="text-[15px] font-bold text-white/90">{BN_CURRENT_STATUS.headline}</h3>
-                  <p className="text-[12px] text-white/45 leading-relaxed mt-1.5 max-w-3xl">{BN_CURRENT_STATUS.summary}</p>
+                  <h3 className="text-[15px] font-bold text-white/90">{CURRENT_STATUS.headline}</h3>
+                  <p className="text-[12px] text-white/45 leading-relaxed mt-1.5 max-w-3xl">{CURRENT_STATUS.summary}</p>
                 </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 mb-5">
-                {BN_CURRENT_STATUS.dimensions.map(d => {
+                {CURRENT_STATUS.dimensions.map(d => {
                   const sm = STATUS_DIM[d.status] ?? STATUS_DIM.active;
                   return (
                     <div key={d.label} className="bg-white/[0.03] rounded-xl p-4 border border-white/[0.05]">
@@ -351,7 +526,7 @@ export default function COSOverview() {
                   <Zap className="w-3 h-3 text-[#F59E0B]" /> Key Opportunities In Motion
                 </p>
                 <div className="flex flex-wrap gap-2.5">
-                  {BN_CURRENT_STATUS.key_opportunities.map((op, i) => {
+                  {CURRENT_STATUS.key_opportunities.map((op, i) => {
                     const um = URGENCY[op.urgency] ?? URGENCY.medium;
                     return (
                       <div key={i} className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl border"
@@ -376,7 +551,7 @@ export default function COSOverview() {
         <section>
           <SectionDivider label="Business Entity Stack" index="04" accent="#06B6D4" />
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-            {BN_ENTITIES.map(entity => {
+            {ENTITIES.map(entity => {
               const EIcon = ENTITY_ICON_MAP[entity.icon] ?? Building2;
               const sm = STATUS_DIM[entity.status] ?? STATUS_DIM.active;
               const netPositive = !entity.net_monthly.startsWith('-');
@@ -456,13 +631,13 @@ export default function COSOverview() {
                   <BarChart2 className="w-3.5 h-3.5 text-[#8B5CF6]" />
                 </div>
                 <div>
-                  <p className="text-[12.5px] font-semibold text-white/80">{BN_WEEKLY_SNAPSHOT.week_of}</p>
-                  <p className="text-[9.5px] text-white/20 font-mono">Generated {BN_WEEKLY_SNAPSHOT.generated} · {BN_META.last_updated_by}</p>
+                  <p className="text-[12.5px] font-semibold text-white/80">{WEEKLY_SNAPSHOT.week_of}</p>
+                  <p className="text-[9.5px] text-white/20 font-mono">Generated {WEEKLY_SNAPSHOT.generated} · {META.last_updated_by}</p>
                 </div>
               </div>
               <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-[#10B981]/20 bg-[#10B981]/[0.06]">
                 <TrendingUp className="w-3 h-3 text-[#10B981]" />
-                <span className="text-[10px] text-[#10B981] font-mono">{BN_WEEKLY_SNAPSHOT.revenue_movement.vs_prior_week} WoW</span>
+                <span className="text-[10px] text-[#10B981] font-mono">{WEEKLY_SNAPSHOT.revenue_movement.vs_prior_week} WoW</span>
               </div>
             </div>
 
@@ -472,7 +647,7 @@ export default function COSOverview() {
                   <CheckSquare className="w-3 h-3 text-[#10B981]" /> Key Wins
                 </p>
                 <div className="space-y-2">
-                  {BN_WEEKLY_SNAPSHOT.wins.map((win, i) => (
+                  {WEEKLY_SNAPSHOT.wins.map((win, i) => (
                     <div key={i} className="flex items-start gap-2.5 p-2.5 rounded-lg bg-[#10B981]/[0.05] border border-[#10B981]/[0.1]">
                       <div className="w-1.5 h-1.5 rounded-full bg-[#10B981] shrink-0 mt-1.5" />
                       <p className="text-[11px] text-white/60 leading-relaxed">{win}</p>
@@ -486,7 +661,7 @@ export default function COSOverview() {
                   <AlertCircle className="w-3 h-3 text-[#EF4444]" /> Issues to Address
                 </p>
                 <div className="space-y-2">
-                  {BN_WEEKLY_SNAPSHOT.issues.map((issue, i) => (
+                  {WEEKLY_SNAPSHOT.issues.map((issue, i) => (
                     <div key={i} className="flex items-start gap-2.5 p-2.5 rounded-lg bg-[#EF4444]/[0.05] border border-[#EF4444]/[0.1]">
                       <div className="w-1.5 h-1.5 rounded-full bg-[#EF4444] shrink-0 mt-1.5" />
                       <p className="text-[11px] text-white/60 leading-relaxed">{issue}</p>
@@ -497,7 +672,7 @@ export default function COSOverview() {
                   <Zap className="w-3 h-3 text-[#F59E0B]" /> New Opportunities
                 </p>
                 <div className="space-y-2">
-                  {BN_WEEKLY_SNAPSHOT.new_opportunities.map((op, i) => (
+                  {WEEKLY_SNAPSHOT.new_opportunities.map((op, i) => (
                     <div key={i} className="flex items-start gap-2.5 p-2.5 rounded-lg bg-[#F59E0B]/[0.05] border border-[#F59E0B]/[0.1]">
                       <div className="w-1.5 h-1.5 rounded-full bg-[#F59E0B] shrink-0 mt-1.5" />
                       <p className="text-[11px] text-white/60 leading-relaxed">{op}</p>
@@ -511,15 +686,15 @@ export default function COSOverview() {
                   <p className="text-[9px] font-mono text-white/20 uppercase tracking-widest mb-2">Revenue Movement</p>
                   <div className="flex items-center gap-2 mb-2">
                     <TrendingUp className="w-4 h-4 text-[#10B981]" />
-                    <span className="text-[20px] font-bold text-[#10B981]">{BN_WEEKLY_SNAPSHOT.revenue_movement.vs_prior_week}</span>
+                    <span className="text-[20px] font-bold text-[#10B981]">{WEEKLY_SNAPSHOT.revenue_movement.vs_prior_week}</span>
                   </div>
-                  <p className="text-[10px] text-white/35 mb-1">Top mover: <span className="text-white/60">{BN_WEEKLY_SNAPSHOT.revenue_movement.top_mover}</span></p>
-                  <p className="text-[10px] text-[#10B981]/70">{BN_WEEKLY_SNAPSHOT.revenue_movement.surprise}</p>
+                  <p className="text-[10px] text-white/35 mb-1">Top mover: <span className="text-white/60">{WEEKLY_SNAPSHOT.revenue_movement.top_mover}</span></p>
+                  <p className="text-[10px] text-[#10B981]/70">{WEEKLY_SNAPSHOT.revenue_movement.surprise}</p>
                 </div>
 
                 <div className="bg-white/[0.03] rounded-xl p-4 border border-white/[0.05]">
                   <p className="text-[9px] font-mono text-white/20 uppercase tracking-widest mb-2">Progress Summary</p>
-                  <p className="text-[10.5px] text-white/45 leading-relaxed">{BN_WEEKLY_SNAPSHOT.progress_summary}</p>
+                  <p className="text-[10.5px] text-white/45 leading-relaxed">{WEEKLY_SNAPSHOT.progress_summary}</p>
                 </div>
 
                 <div className="flex items-center gap-2.5 p-3 rounded-xl border border-white/[0.06] bg-white/[0.02]">
@@ -611,7 +786,7 @@ export default function COSOverview() {
 
           {/* Outcome targets strip */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
-            {BN_EXPECTED_ANNUAL_OUTCOMES.map(o => (
+            {EXPECTED_ANNUAL_OUTCOMES.map(o => (
               <div key={o.label} className="bg-[#0B0D10] border border-white/[0.06] rounded-xl p-4 relative overflow-hidden">
                 <div className="absolute top-0 left-0 right-0 h-[1px]"
                   style={{ background: `linear-gradient(90deg, transparent, ${o.color}30, transparent)` }} />
@@ -764,7 +939,7 @@ export default function COSOverview() {
         <section>
           <SectionDivider label="AI Recommendations" index="08" accent="#EC4899" />
           <div className="space-y-3">
-            {BN_AI_RECOMMENDATIONS.map((rec, i) => {
+            {AI_RECOMMENDATIONS.map((rec, i) => {
               const um = URGENCY[rec.urgency] ?? URGENCY.medium;
               return (
                 <div key={i}
@@ -839,7 +1014,7 @@ export default function COSOverview() {
                 <DollarSign className="w-4 h-4 text-[#3B82F6]" />
                 <span className="text-[12.5px] font-semibold text-white/70">Financial Snapshot — Consolidated (All Entities)</span>
               </div>
-              <span className="text-[9.5px] font-mono text-white/20">As of {BN_META.last_updated}</span>
+              <span className="text-[9.5px] font-mono text-white/20">As of {META.last_updated}</span>
             </div>
 
             <div className="px-5 pt-3 pb-0">
@@ -848,19 +1023,19 @@ export default function COSOverview() {
                   <span key={h} className="text-[8.5px] font-mono text-white/15 uppercase tracking-wider">{h}</span>
                 ))}
               </div>
-              <AccountingRow label="This Week"    data={BN_ACCOUNTING.this_week}         />
-              <AccountingRow label="Month to Date" data={BN_ACCOUNTING.month_to_date}    />
-              <AccountingRow label="Quarter to Date" data={BN_ACCOUNTING.quarter_to_date} />
-              <AccountingRow label="Year to Date"  data={BN_ACCOUNTING.year_to_date}     />
+              <AccountingRow label="This Week"    data={ACCOUNTING.this_week}         />
+              <AccountingRow label="Month to Date" data={ACCOUNTING.month_to_date}    />
+              <AccountingRow label="Quarter to Date" data={ACCOUNTING.quarter_to_date} />
+              <AccountingRow label="Year to Date"  data={ACCOUNTING.year_to_date}     />
             </div>
 
             <div className="px-5 py-4 border-t border-white/[0.05] flex items-center justify-between flex-wrap gap-4">
               <div>
                 <p className="text-[9px] font-mono text-white/20 mb-1 uppercase tracking-wider">Top Expense This Month</p>
-                <p className="text-[11.5px] text-white/55">{BN_ACCOUNTING.top_expense_this_month}</p>
+                <p className="text-[11.5px] text-white/55">{ACCOUNTING.top_expense_this_month}</p>
               </div>
               <div className="flex items-center gap-4 flex-wrap">
-                {BN_ACCOUNTING.revenue_sources.map(src => (
+                {ACCOUNTING.revenue_sources.map(src => (
                   <div key={src.label} className="flex items-center gap-1.5">
                     <div className="w-2 h-2 rounded-full" style={{ background: src.color }} />
                     <span className="text-[9.5px] text-white/35">{src.label}</span>
@@ -896,16 +1071,16 @@ export default function COSOverview() {
                       <span className="text-[8px] font-mono text-[#10B981] tracking-wider">AI OPERATOR ACTIVE</span>
                     </div>
                   </div>
-                  <p className="text-[15px] font-mono font-bold text-[#06B6D4]">{BN_COMMS.email}</p>
+                  <p className="text-[15px] font-mono font-bold text-[#06B6D4]">{COMMS.email}</p>
                 </div>
               </div>
 
-              <p className="text-[12px] text-white/40 leading-relaxed mb-4">{BN_COMMS.description}</p>
+              <p className="text-[12px] text-white/40 leading-relaxed mb-4">{COMMS.description}</p>
 
               <div className="flex items-center gap-2.5 p-3 rounded-xl bg-white/[0.03] border border-white/[0.05] mb-5">
                 <Bot className="w-4 h-4 text-[#06B6D4] shrink-0" />
                 <p className="text-[11px] text-white/45">
-                  <span className="text-white/65 font-medium">SLA:</span> {BN_COMMS.response_sla}
+                  <span className="text-white/65 font-medium">SLA:</span> {COMMS.response_sla}
                 </p>
               </div>
 
@@ -915,7 +1090,7 @@ export default function COSOverview() {
                   <Send className="w-3.5 h-3.5" />
                   Submit Task / Request
                 </button>
-                <a href={`mailto:${BN_COMMS.email}`}
+                <a href={`mailto:${COMMS.email}`}
                   className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-[11.5px] font-medium border border-[#06B6D4]/25 text-[#06B6D4] hover:bg-[#06B6D4]/[0.08] transition-all">
                   <Mail className="w-3.5 h-3.5" />
                   Open Email
@@ -929,7 +1104,7 @@ export default function COSOverview() {
                 <span className="text-[8.5px] font-mono px-2 py-0.5 rounded bg-[#06B6D4]/10 text-[#06B6D4] border border-[#06B6D4]/20">INBOX</span>
               </div>
               <div className="flex-1 divide-y divide-white/[0.04]">
-                {BN_COMMS.recent_threads.map((thread, i) => (
+                {COMMS.recent_threads.map((thread, i) => (
                   <div key={i}
                     className={`px-4 py-3.5 hover:bg-white/[0.02] transition-all cursor-pointer ${thread.unread ? 'bg-[#06B6D4]/[0.025]' : ''}`}>
                     <div className="flex items-start gap-2.5">

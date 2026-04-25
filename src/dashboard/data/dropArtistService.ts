@@ -22,7 +22,6 @@ export async function initDropState(): Promise<void> {
     const { data } = await supabase
       .from('artist_lifecycle_events')
       .select('artist_id, state')
-      .in('state', ['dropped_pending', 'dropped_complete'])
       .order('initiated_at', { ascending: false });
     if (!data) return;
     const seen = new Set<string>();
@@ -94,7 +93,6 @@ export async function fetchDroppedQueue(): Promise<ArtistLifecycleEvent[]> {
     const { data, error } = await supabase
       .from('artist_lifecycle_events')
       .select('*')
-      .in('state', ['dropped_pending', 'dropped_complete'])
       .order('initiated_at', { ascending: false });
 
     if (error || !data) return [];
@@ -104,8 +102,11 @@ export async function fetchDroppedQueue(): Promise<ArtistLifecycleEvent[]> {
     for (const row of data) {
       if (!seen.has(row.artist_id)) {
         seen.add(row.artist_id);
-        setLocalLifecycleState(row.artist_id, row.state as ArtistLifecycleState);
-        result.push(row as ArtistLifecycleEvent);
+        const state = row.state as ArtistLifecycleState;
+        setLocalLifecycleState(row.artist_id, state);
+        if (state === 'dropped_pending' || state === 'dropped_complete') {
+          result.push(row as ArtistLifecycleEvent);
+        }
       }
     }
     return result;
@@ -124,6 +125,23 @@ export function getActiveArtists<T extends { id: string }>(artists: T[]): T[] {
   return artists.filter(a => !isArtistDropped(a.id));
 }
 
+export async function reinstateArtist(artistId: string, initiatedBy: string): Promise<{ error: string | null }> {
+  setLocalLifecycleState(artistId, 'active');
+  try {
+    const { error } = await supabase.from('artist_lifecycle_events').insert({
+      artist_id: artistId,
+      artist_name: '',
+      state: 'active',
+      initiated_by: initiatedBy,
+      notes: 'Reinstated from Dropped Queue',
+    });
+    if (error) return { error: error.message };
+    return { error: null };
+  } catch (e) {
+    return { error: String(e) };
+  }
+}
+
 export function restoreArtist(artistId: string): void {
   setLocalLifecycleState(artistId, 'active');
 }
@@ -134,11 +152,12 @@ export async function fetchLifecycleEventForArtist(artistId: string): Promise<Ar
       .from('artist_lifecycle_events')
       .select('*')
       .eq('artist_id', artistId)
-      .in('state', ['dropped_pending', 'dropped_complete'])
       .order('initiated_at', { ascending: false })
       .limit(1)
       .maybeSingle();
     if (error || !data) return null;
+    const state = data.state as ArtistLifecycleState;
+    if (state === 'active') return null;
     return data as ArtistLifecycleEvent;
   } catch {
     return null;

@@ -1,4 +1,12 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useParams } from 'react-router-dom';
+import ChefCherylLayout from './chefcheryl/ChefCherylLayout';
+import CCHome from './chefcheryl/pages/CCHome';
+import CCClasses from './chefcheryl/pages/CCClasses';
+import CCReserve from './chefcheryl/pages/CCReserve';
+import CCGallery from './chefcheryl/pages/CCGallery';
+import CCAbout from './chefcheryl/pages/CCAbout';
+import CCFAQ from './chefcheryl/pages/CCFAQ';
+import CCContact from './chefcheryl/pages/CCContact';
 import { AuthProvider } from './auth/AuthContext';
 import { IndustryOSProvider } from './auth/IndustryOSContext';
 import { RoleProvider } from './auth/RoleContext';
@@ -101,7 +109,7 @@ import ArtistOS from './dashboard/pages/ArtistOS';
 import ArtistOSOverview from './dashboard/pages/ArtistOSOverview';
 import ArtistOSUpdates from './dashboard/pages/ArtistOSUpdates';
 import ArtistOSRequests from './dashboard/pages/ArtistOSRequests';
-import CatalogOSLayout from './dashboard/pages/catalogOS/CatalogOSLayout';
+import { CatalogAdminLayout, CatalogClientLayout } from './dashboard/pages/catalogOS/CatalogOSLayout';
 import COSOverview from './dashboard/pages/catalogOS/COSOverview';
 import COSValue from './dashboard/pages/catalogOS/COSValue';
 import COSRevenue from './dashboard/pages/catalogOS/COSRevenue';
@@ -119,6 +127,10 @@ import COSRights from './dashboard/pages/catalogOS/COSRights';
 import COSWorkers from './dashboard/pages/catalogOS/COSWorkers';
 import COSMeetings from './dashboard/pages/catalogOS/COSMeetings';
 import COSEntities from './dashboard/pages/catalogOS/COSEntities';
+import COSFutures from './dashboard/pages/catalogOS/COSFutures';
+import COSDroppedQueue from './dashboard/pages/catalogOS/COSDroppedQueue';
+import COSAdminView from './dashboard/pages/catalogOS/COSAdminView';
+import COSTeamView from './dashboard/pages/catalogOS/COSTeamView';
 import DealPipeline from './dashboard/pages/DealPipeline';
 import WeeklySignings from './dashboard/pages/WeeklySignings';
 import ArtistOSCampaignCenter from './dashboard/pages/ArtistOSCampaignCenter';
@@ -128,6 +140,44 @@ import DroppedQueue from './dashboard/pages/DroppedQueue';
 import LabelsPage from './dashboard/pages/LabelsPage';
 import LabelDetailPage from './dashboard/pages/LabelDetailPage';
 import FanOS from './dashboard/pages/FanOS';
+import SystemHub from './pages/SystemHub';
+
+function CatalogOSIndexDispatch() {
+  const cosRole = (() => {
+    try { return localStorage.getItem('catalogos_role') || sessionStorage.getItem('catalogos_role') || ''; } catch { return ''; }
+  })();
+  const cosClientId = (() => {
+    try { return localStorage.getItem('catalogos_client_id') || sessionStorage.getItem('catalogos_client_id') || ''; } catch { return ''; }
+  })();
+  // Admin → internal admin view
+  if (cosRole === 'catalog_admin') return <COSAdminView />;
+  // No client ID → admin view as fallback
+  if (!cosClientId) return <COSAdminView />;
+  // Marketing team → restricted team view
+  if (cosRole === 'catalog_team') return <Navigate to={`/catalog/app/team/${cosClientId}`} replace />;
+  // Client owner → full client page
+  return <Navigate to={`/catalog/app/client/${cosClientId}`} replace />;
+}
+
+// Slug → UUID map for friendly client URLs
+const CLIENT_SLUG_MAP: Record<string, string> = {
+  'bassnectar':            'a1000000-0000-0000-0000-000000000001',
+  'santigold':             'a2000000-0000-0000-0000-000000000002',
+  'virgin-catalog-artist': 'a3000000-0000-0000-0000-000000000003',
+};
+
+// Full client view — resolves slug or UUID from URL param
+function COSClientRoute() {
+  const { clientId } = useParams<{ clientId: string }>();
+  const resolvedId = clientId ? (CLIENT_SLUG_MAP[clientId] ?? clientId) : undefined;
+  return <COSOverview forceClientId={resolvedId} />;
+}
+
+// Restricted team view — identified by URL clientId param
+function COSTeamRoute() {
+  const { clientId } = useParams<{ clientId: string }>();
+  return <COSTeamView forceClientId={clientId} />;
+}
 
 function PublicLayout() {
   return (
@@ -196,11 +246,25 @@ function App() {
             <Route path="profile" element={<IndustryOSProfile />} />
           </Route>
           <Route path="/project-os" element={<ProjectOS />} />
+          <Route path="/system-hub" element={<InternalProtectedRoute><SystemHub /></InternalProtectedRoute>} />
           <Route path="/login/catalog-os" element={<CatalogOSLogin />} />
           <Route path="/catalog/login" element={<CatalogOSLogin />} />
           <Route path="/catalog-os/login" element={<CatalogOSLogin />} />
-          <Route path="/catalog/app" element={<CatalogOSProtectedRoute><CatalogOSLayout /></CatalogOSProtectedRoute>}>
-            <Route index element={<COSOverview />} />
+          {/* ── Catalog OS: Admin shell — no CatalogClientProvider ── */}
+          <Route path="/catalog/app" element={<CatalogOSProtectedRoute><CatalogAdminLayout /></CatalogOSProtectedRoute>}>
+            <Route index          element={<CatalogOSIndexDispatch />} />
+            <Route path="admin"         element={<COSAdminView />} />
+            <Route path="roster"        element={<COSRoster />} />
+            <Route path="dropped-queue" element={<COSDroppedQueue />} />
+            <Route path="futures"       element={<COSFutures />} />
+            <Route path="tasks"         element={<COSTasks />} />
+            <Route path="progress"      element={<COSTeamProgress />} />
+          </Route>
+
+          {/* ── Catalog OS: Client shell — CatalogClientProvider per client ── */}
+          <Route path="/catalog/app/client/:clientId" element={<CatalogOSProtectedRoute><CatalogClientLayout /></CatalogOSProtectedRoute>}>
+            <Route index          element={<COSClientRoute />} />
+            <Route path="overview"  element={<COSClientRoute />} />
             <Route path="value"     element={<COSValue />} />
             <Route path="assets"    element={<COSAssets />} />
             <Route path="revenue"   element={<COSRevenue />} />
@@ -208,7 +272,6 @@ function App() {
             <Route path="progress"  element={<COSTeamProgress />} />
             <Route path="timeline"  element={<COSTimeline />} />
             <Route path="campaigns" element={<COSCampaigns />} />
-            <Route path="roster"    element={<COSRoster />} />
             <Route path="fans"      element={<COSFans />} />
             <Route path="fan-os"    element={<FanOS />} />
             <Route path="touring"   element={<COSTouring />} />
@@ -218,6 +281,12 @@ function App() {
             <Route path="workers"   element={<COSWorkers />} />
             <Route path="meetings"  element={<COSMeetings />} />
             <Route path="entities"  element={<COSEntities />} />
+            <Route path="futures"   element={<COSFutures />} />
+          </Route>
+
+          {/* ── Catalog OS: Team shell — CatalogClientProvider for team view ── */}
+          <Route path="/catalog/app/team/:clientId" element={<CatalogOSProtectedRoute><CatalogClientLayout /></CatalogOSProtectedRoute>}>
+            <Route index element={<COSTeamRoute />} />
           </Route>
           <Route path="/rocksteady/login" element={<Navigate to="/login/rocksteady" replace />} />
           <Route path="/dashboard" element={<DashboardLayout />}>
@@ -321,6 +390,16 @@ function App() {
             <Route path="artist-os/artists" element={<ArtistOSProtectedRoute allowedRoles={['admin_team', 'label_partner']}><ArtistOSArtists /></ArtistOSProtectedRoute>} />
             <Route path="catalog-os" element={<Navigate to="/catalog/app" replace />} />
             <Route path="catalog-os/*" element={<Navigate to="/catalog/app" replace />} />
+          </Route>
+          {/* Chef Cheryl Cooking Classes */}
+          <Route path="/chef-cheryl" element={<ChefCherylLayout />}>
+            <Route index   element={<CCHome />} />
+            <Route path="classes" element={<CCClasses />} />
+            <Route path="reserve" element={<CCReserve />} />
+            <Route path="gallery" element={<CCGallery />} />
+            <Route path="about"   element={<CCAbout />} />
+            <Route path="faq"     element={<CCFAQ />} />
+            <Route path="contact" element={<CCContact />} />
           </Route>
           <Route path="/*" element={<PublicLayout />} />
         </Routes>

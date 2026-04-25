@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useParams } from 'react-router-dom';
 import {
   TrendingUp, TrendingDown, DollarSign, AlertCircle, CheckCircle, Clock,
   Shield, FileText, Lock, ChevronDown, ChevronRight, ChevronUp,
@@ -68,7 +69,196 @@ function ReadinessChip({ status, label, detail, color }: { status: string; label
   );
 }
 
+// Per-client "Not For Sale" valuation data
+const NFS_CLIENTS: Record<string, {
+  artistName: string;
+  catalogName: string;
+  accentColor: string;
+  logoUrl?: string;
+  annualRevenue: string;
+  monthlyRevenue: string;
+  estimatedRange: string;
+  genres: string;
+  totalReleases: number;
+  valuationNote: string;
+  readinessItems: { label: string; status: 'ready' | 'in_progress' | 'pending'; detail: string }[];
+}> = {
+  santigold: {
+    artistName: 'Santigold',
+    catalogName: 'Santigold / Santi White Publishing + Masters',
+    accentColor: '#F59E0B',
+    annualRevenue: '$180K–$240K',
+    monthlyRevenue: '$15K–$20K',
+    estimatedRange: '$2.5M – $4.5M',
+    genres: 'Alternative / Art-Pop / New Wave',
+    totalReleases: 6,
+    valuationNote: 'Santigold\'s catalog carries significant cultural equity across alt-pop and art-pop audiences. Recurring streaming and sync income form a durable revenue base. Valuation range is based on trailing NMV with a 14–18× multiple, consistent with culturally resonant independent catalogs.',
+    readinessItems: [
+      { label: 'Revenue Audit', status: 'in_progress', detail: 'Trailing 12-month revenue capture in progress across DSPs and publishing admin.' },
+      { label: 'Rights Verification', status: 'in_progress', detail: 'Master ownership and publishing splits under review. No material encumbrances identified.' },
+      { label: 'Sync Pipeline Assessment', status: 'pending', detail: 'Sync licensing opportunities being mapped — strong placement history in film/TV.' },
+      { label: 'Data Room Prep', status: 'pending', detail: 'CIM and data room to be assembled once revenue audit is finalized.' },
+    ],
+  },
+  'virgin-catalog-artist': {
+    artistName: 'Virgin Catalog Artist',
+    catalogName: 'Virgin Catalog Artist — Masters Portfolio',
+    accentColor: '#06B6D4',
+    annualRevenue: '$90K–$140K',
+    monthlyRevenue: '$7.5K–$12K',
+    estimatedRange: '$1.2M – $2.2M',
+    genres: 'Pop / R&B / Crossover',
+    totalReleases: 4,
+    valuationNote: 'This catalog represents a legacy pop/R&B asset with stable recurring income and potential for catalog reactivation through targeted streaming and sync campaigns. Estimated valuation is based on a 12–16× trailing NMV multiple, reflecting current yield with upside from planned reactivation efforts.',
+    readinessItems: [
+      { label: 'Revenue Audit', status: 'pending', detail: 'Initial revenue capture not yet started. GMG team to begin Q3 2026.' },
+      { label: 'Rights Verification', status: 'pending', detail: 'Master and publishing rights documentation requested from prior administrator.' },
+      { label: 'Catalog Reactivation Plan', status: 'pending', detail: 'Streaming and sync reactivation strategy to be developed following rights verification.' },
+      { label: 'Data Room Prep', status: 'pending', detail: 'Data room build queued pending rights and revenue confirmation.' },
+    ],
+  },
+};
+
+function NotForSaleValuation({ clientSlug }: { clientSlug: string }) {
+  const d = NFS_CLIENTS[clientSlug];
+  if (!d) return null;
+  const ACCENT = d.accentColor;
+
+  const statusIcon = (s: string) => s === 'ready' ? CheckCircle : s === 'in_progress' ? Clock : AlertCircle;
+  const statusColor = (s: string) => s === 'ready' ? '#10B981' : s === 'in_progress' ? '#F59E0B' : '#6B7280';
+
+  return (
+    <div className="min-h-full bg-[#07080A]">
+      <CatalogPageHeader
+        icon={Lock}
+        title="Catalog Value / Sale Room"
+        subtitle="Prepared valuation — not currently active for sale"
+        accentColor={ACCENT}
+        badge="NOT FOR SALE"
+        logoUrl={d.logoUrl}
+        logoAlt={d.artistName}
+      />
+
+      <div className="p-5 space-y-6">
+
+        {/* Status banner */}
+        <div className="relative bg-[#0B0D10] border rounded-2xl overflow-hidden p-5"
+          style={{ borderColor: `${ACCENT}22` }}>
+          <div className="absolute top-0 left-0 right-0 h-[1px]"
+            style={{ background: `linear-gradient(90deg, transparent, ${ACCENT}35, transparent)` }} />
+          <div className="flex items-start gap-4 flex-wrap">
+            <div className="flex-1 min-w-[240px]">
+              <div className="flex items-center gap-2.5 mb-2">
+                <span className="text-[11px] font-mono font-bold px-3 py-1 rounded-full tracking-widest"
+                  style={{ color: '#6B7280', background: '#6B728018', border: '1.5px solid #6B728030' }}>
+                  NOT FOR SALE
+                </span>
+              </div>
+              <h2 className="text-[18px] font-bold text-white/80 leading-tight mb-1">{d.catalogName}</h2>
+              <p className="text-[11.5px] text-white/35 leading-relaxed max-w-2xl">
+                This catalog is not currently listed for sale. This page is a prepared valuation overview available to GMG reps. When the catalog is ready for sale, a buyer login can be created to expose the Sale Room to qualified buyers.
+              </p>
+            </div>
+            <div className="shrink-0 flex flex-col gap-2 min-w-[180px]">
+              <button disabled
+                className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-[11px] font-semibold border border-white/[0.07] text-white/20 cursor-not-allowed"
+              >
+                <Lock className="w-3.5 h-3.5" />
+                Create Buyer Login
+              </button>
+              <p className="text-[8.5px] font-mono text-white/15 text-center">Available when catalog is listed for sale</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Estimated valuation */}
+        <div className="bg-[#0B0D10] border border-white/[0.07] rounded-2xl p-6">
+          <p className="text-[9px] font-mono text-white/20 uppercase tracking-widest mb-4">Estimated Valuation Range</p>
+          <div className="flex items-end gap-8 flex-wrap mb-6">
+            <div>
+              <p className="text-[10px] font-mono text-white/20 mb-1">Estimated Range</p>
+              <p className="text-[38px] font-black leading-none" style={{ color: ACCENT }}>{d.estimatedRange}</p>
+              <p className="text-[10.5px] text-white/30 mt-1.5">Based on 12–18× NMV · Subject to final revenue audit</p>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              {[
+                { label: 'Est. Monthly Revenue', value: d.monthlyRevenue, color: ACCENT },
+                { label: 'Est. Annual Revenue',  value: d.annualRevenue,  color: '#10B981' },
+                { label: 'Total Releases',       value: `${d.totalReleases}`,          color: '#06B6D4' },
+                { label: 'Genre',                value: d.genres,         color: '#F59E0B' },
+              ].map(m => (
+                <div key={m.label} className="bg-white/[0.03] rounded-xl p-3 border border-white/[0.05] min-w-[130px]">
+                  <p className="text-[8px] font-mono text-white/20 mb-1 uppercase tracking-wider">{m.label}</p>
+                  <p className="text-[12px] font-bold leading-snug" style={{ color: m.color }}>{m.value}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="pt-4 border-t border-white/[0.05]">
+            <p className="text-[11px] text-white/40 leading-relaxed max-w-3xl">{d.valuationNote}</p>
+          </div>
+        </div>
+
+        {/* Sale readiness checklist */}
+        <div className="bg-[#0B0D10] border border-white/[0.07] rounded-2xl overflow-hidden">
+          <div className="px-5 py-4 border-b border-white/[0.05] flex items-center gap-2.5">
+            <div className="w-7 h-7 rounded-lg flex items-center justify-center"
+              style={{ background: `${ACCENT}18`, border: `1px solid ${ACCENT}25` }}>
+              <CheckCircle className="w-3.5 h-3.5" style={{ color: ACCENT }} />
+            </div>
+            <div>
+              <p className="text-[12.5px] font-semibold text-white/70">Sale Readiness Checklist</p>
+              <p className="text-[9.5px] text-white/20 font-mono">Items required before Sale Room can be activated</p>
+            </div>
+          </div>
+          <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-3">
+            {d.readinessItems.map(item => {
+              const Icon = statusIcon(item.status);
+              const color = statusColor(item.status);
+              return (
+                <div key={item.label} className="flex items-start gap-3 px-4 py-3.5 rounded-xl border"
+                  style={{ borderColor: `${color}22`, background: `${color}06` }}>
+                  <Icon className="w-4 h-4 shrink-0 mt-0.5" style={{ color }} />
+                  <div>
+                    <p className="text-[11.5px] font-semibold mb-0.5" style={{ color }}>{item.label}</p>
+                    <p className="text-[10px] text-white/35 leading-relaxed">{item.detail}</p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Rep note */}
+        <div className="flex items-start gap-3 px-4 py-3.5 rounded-xl border border-white/[0.06] bg-white/[0.02]">
+          <Shield className="w-4 h-4 shrink-0 mt-0.5 text-white/20" />
+          <p className="text-[10.5px] text-white/30 leading-relaxed">
+            <span className="font-semibold text-white/45">Rep note:</span> When this catalog is ready for sale, navigate to Settings and activate the Sale Room. You can then create a buyer NDA login to expose the data room to qualified parties.
+          </p>
+        </div>
+
+        <div className="h-4" />
+      </div>
+    </div>
+  );
+}
+
+// Slug map — route param to profile key
+const SLUG_TO_CLIENT: Record<string, string> = {
+  bassnectar: 'bassnectar',
+  santigold: 'santigold',
+  'virgin-catalog-artist': 'virgin-catalog-artist',
+};
+
 export default function COSValue() {
+  const { clientId } = useParams<{ clientId: string }>();
+  const resolvedSlug = clientId ? (SLUG_TO_CLIENT[clientId] ?? clientId) : 'bassnectar';
+
+  // Non-Bassnectar clients get the Not For Sale valuation page
+  if (resolvedSlug !== 'bassnectar') {
+    return <NotForSaleValuation clientSlug={resolvedSlug} />;
+  }
+
   const sr = BN_SALE_ROOM;
   const [methodExpanded, setMethodExpanded] = useState(false);
   const [activeBuyer, setActiveBuyer] = useState<string | null>(null);

@@ -37,15 +37,9 @@ export function CatalogClientProvider({ children }: { children: ReactNode }) {
       setLoading(true);
       const all = await fetchAllClients();
       setClients(all);
-      if (all.length > 0) {
-        const saved = localStorage.getItem(STORAGE_KEY);
-        const match = saved ? all.find(c => c.id === saved) : null;
-        const target = match ?? all[0];
-        await loadClient(target.id);
-      }
       setLoading(false);
     })();
-  }, [loadClient]);
+  }, []);
 
   const switchClient = useCallback(async (id: string) => {
     setLoading(true);

@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { ChevronDown, Shield } from 'lucide-react';
-import { useRole } from '../../auth/RoleContext';
-import { type ArtistOSRole, ROLE_META } from '../../auth/roles';
+import { useRole } from '../../../auth/RoleContext';
+import { type ArtistOSRole, ROLE_META } from '../../../auth/roles';
 
 const ROLES: ArtistOSRole[] = ['artist_manager', 'label_partner', 'admin_team'];
 

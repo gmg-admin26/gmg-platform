@@ -1,7 +1,6 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import fs from 'fs';
-import path from 'path';
 
 function gracefulPublicCopy(): import('vite').Plugin {
   return {
@@ -27,8 +26,5 @@ function gracefulPublicCopy(): import('vite').Plugin {
 
 export default defineConfig({
   plugins: [react(), gracefulPublicCopy()],
-  optimizeDeps: {
-    exclude: ['lucide-react'],
-  },
   publicDir: 'public',
 });

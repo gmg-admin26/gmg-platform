@@ -34,7 +34,7 @@ export const SYSTEM_ACCESS: Record<SystemRole, {
   },
 };
 
-export type CatalogOSRole = 'catalog_owner' | 'catalog_admin';
+export type CatalogOSRole = 'catalog_owner' | 'catalog_admin' | 'catalog_team';
 
 export interface CatalogOSUser {
   email: string;
@@ -62,7 +62,43 @@ export const CATALOG_OS_USERS: CatalogOSUser[] = [
     password: 'bassnectar123',
     role: 'catalog_owner',
     displayName: 'Bassnectar Catalog',
-    clientId: 'bassnectar',
+    clientId: 'a1000000-0000-0000-0000-000000000001',
+  },
+  {
+    email: 'client@santigold.com',
+    password: 'santigold123',
+    role: 'catalog_owner',
+    displayName: 'Santigold Catalog',
+    clientId: 'a2000000-0000-0000-0000-000000000002',
+  },
+  {
+    email: 'client@artist03.com',
+    password: 'artist03123',
+    role: 'catalog_owner',
+    displayName: 'Virgin Catalog Artist',
+    clientId: 'a3000000-0000-0000-0000-000000000003',
+  },
+  // Marketing team restricted logins
+  {
+    email: 'marketing+bassnectar@gmg.ai',
+    password: 'team-bassnectar123',
+    role: 'catalog_team',
+    displayName: 'Bassnectar Team',
+    clientId: 'a1000000-0000-0000-0000-000000000001',
+  },
+  {
+    email: 'marketing+santigold@gmg.ai',
+    password: 'team-santigold123',
+    role: 'catalog_team',
+    displayName: 'Santigold Team',
+    clientId: 'a2000000-0000-0000-0000-000000000002',
+  },
+  {
+    email: 'marketing+virgincatalog@gmg.ai',
+    password: 'team-virgin123',
+    role: 'catalog_team',
+    displayName: 'Virgin Catalog Team',
+    clientId: 'a3000000-0000-0000-0000-000000000003',
   },
 ];
 
